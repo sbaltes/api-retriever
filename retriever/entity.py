@@ -66,9 +66,11 @@ class EntityConfiguration(object):
             # configure the randomized delay interval (ms) between two API requests (trying to prevent getting blocked)
             self.delay_min = config["delay"][0]
             self.delay_max = config["delay"][1]
+            # configure if list should be flattened using "join"
+            self.flatten_lists = config["flatten_lists"]
 
-        except KeyError:
-            raise IllegalConfigurationError("Parsing configuration file failed.")
+        except KeyError as e:
+            raise IllegalConfigurationError("Parsing configuration file failed: Parameter " + str(e) + " not found.")
 
 
 class Entity(object):
@@ -187,9 +189,19 @@ class Entity(object):
                             value = None
                             break
                     if value:
+                        # if flatten_lists is configured and value is a list, flatten it
+                        if self.configuration.flatten_lists and isinstance(value, list):
+                            value = ", ".join(value)
+
                         if parameter in self.validation_parameters:
-                            if not value == self.validation_parameters[parameter]:
-                                logger.error("Validation failed for parameter " + parameter + " of entity " + str(self))
+                            if str(value) == str(self.validation_parameters[parameter]):
+                                logger.info("Validation successful for parameter " + parameter
+                                            + " of entity " + str(self) + ".")
+                            else:
+                                logger.error("Validation failed for parameter " + parameter
+                                             + " of entity " + str(self)
+                                             + ": Expected: " + self.validation_parameters[parameter]
+                                             + ", Actual: " + str(value) + ".")
                         else:
                             self.api_parameters[parameter] = value
                     else:
@@ -338,4 +350,4 @@ class EntityList(object):
                 except UnicodeEncodeError:
                     logger.error("Encoding error while writing data for entity: " + str(entity))
 
-            logger.info(str(len(self.list)) + ' entities were exported.')
+            logger.info(str(len(self.list)) + ' entities have been exported.')
