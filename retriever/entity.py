@@ -4,8 +4,10 @@ import codecs
 import csv
 import json
 import logging
+import time
 import requests
 
+from random import randint
 from jsmin import jsmin
 from _socket import gaierror
 from requests.packages.urllib3.exceptions import MaxRetryError
@@ -56,8 +58,11 @@ class EntityConfiguration(object):
             self.uri_template = URITemplate(config["uri_template"])
             # API key to include in the uri_template
             self.api_key = config["api_key"]
-            # specify if duplicate values in the input files should be ignored.
+            # configure if duplicate values in the input files should be ignored.
             self.ignore_duplicates = config["ignore_duplicates"]
+            # configure the randomized delay interval (ms) between two API requests (trying to prevent getting blocked)
+            self.delay_min = config["delay"][0]
+            self.delay_max = config["delay"][1]
 
         except KeyError:
             raise IllegalConfigurationError("Parsing configuration file failed.")
@@ -68,42 +73,42 @@ class Entity(object):
     Class representing one API entity for which information should be retrieved over an API.
     """
 
-    def __init__(self, entity_configuration, id_parameter_values, validation_parameter_values):
+    def __init__(self, configuration, id_parameter_values, validation_parameter_values):
         """
         To initialize an entity, a corresponding entity configuration together with values for the id parameter(s)
         and (optional) validation parameter(s) are needed.
-        :param entity_configuration: an object of class EntityConfiguration
+        :param configuration: an object of class EntityConfiguration
         :param id_parameter_values: values for the id parameters defined in the configuration
         :param validation_parameter_values: values for the validation parameters defined in the configuration
         """
 
         # check if number of ID parameters matches number of values
-        if not len(id_parameter_values) == len(entity_configuration.id_parameter_names):
+        if not len(id_parameter_values) == len(configuration.id_parameter_names):
             raise IllegalArgumentError("Wrong number of ID parameter values: "
                                        + str(len(id_parameter_values)))
 
         # check if number of validation parameters matches number of values
-        if not len(validation_parameter_values) == len(entity_configuration.validation_parameter_names):
+        if not len(validation_parameter_values) == len(configuration.validation_parameter_names):
             raise IllegalArgumentError("Wrong number of validation parameter values: "
                                        + str(len(validation_parameter_values)))
 
         # corresponding entity configuration
-        self.entity_configuration = entity_configuration
+        self.configuration = configuration
         # parameters needed to identify entity
-        self.id_parameters = dict.fromkeys(entity_configuration.id_parameter_names)
+        self.id_parameters = dict.fromkeys(configuration.id_parameter_names)
         # optional parameters to validate existing entity parameters
-        self.validation_parameters = dict.fromkeys(entity_configuration.validation_parameter_names)
+        self.validation_parameters = dict.fromkeys(configuration.validation_parameter_names)
         # parameters that should be retrieved using API (must include validation parameters)
-        self.api_parameters = dict.fromkeys(entity_configuration.json_mapping.keys())
+        self.api_parameters = dict.fromkeys(configuration.json_mapping.keys())
 
         # set values for ID parameters
-        for parameter_name in entity_configuration.id_parameter_names:
+        for parameter_name in configuration.id_parameter_names:
             if parameter_name not in id_parameter_values:
                 raise IllegalArgumentError("Illegal ID parameter name: " + parameter_name)
             self.id_parameters[parameter_name] = id_parameter_values[parameter_name]
 
         # set values for validation parameters
-        for parameter_name in entity_configuration.validation_parameter_names:
+        for parameter_name in configuration.validation_parameter_names:
             if parameter_name not in validation_parameter_values:
                 raise IllegalArgumentError("Illegal validation parameter name: " + parameter_name)
             self.validation_parameters[parameter_name] = validation_parameter_values[parameter_name]
@@ -139,10 +144,10 @@ class Entity(object):
             logger.info("Retrieving data for entity: " + str(self))
 
             # expand URI for this entity
-            uri_parameter_mapping = dict.fromkeys(self.entity_configuration.uri_template.variable_names)
+            uri_parameter_mapping = dict.fromkeys(self.configuration.uri_template.variable_names)
             for var in uri_parameter_mapping.keys():
                 if var == "api_key":
-                    val = self.entity_configuration.api_key
+                    val = self.configuration.api_key
                 else:
                     val = self.id_parameters.get(var, None)
 
@@ -150,8 +155,11 @@ class Entity(object):
                     uri_parameter_mapping[var] = val
                 else:
                     IllegalArgumentError("Value for URI parameter " + var + " missing.")
-            uri = self.entity_configuration.uri_template.expand(uri_parameter_mapping)
+            uri = self.configuration.uri_template.expand(uri_parameter_mapping)
 
+            # reduce request frequency as configured
+            delay = randint(self.configuration.delay_min, self.configuration.delay_max)  # delay between requests in milliseconds
+            time.sleep(delay / 1000)  # sleep for delay ms to not get blocked by Airbnb
 
             # retrieve data
             data = session.get(uri)
@@ -165,8 +173,8 @@ class Entity(object):
                 data_json = json.loads(data.text)
 
                 # extract data for all parameters according to access path defined in JSON mapping
-                for parameter in self.entity_configuration.json_mapping:
-                    access_path = self.entity_configuration.json_mapping[parameter]
+                for parameter in self.configuration.json_mapping:
+                    access_path = self.configuration.json_mapping[parameter]
                     value = data_json  # start with whole JSON object
                     for step in access_path:
                         try:
@@ -195,12 +203,12 @@ class Entity(object):
 class EntityList(object):
     """ List of API entities. """
 
-    def __init__(self, entity_configuration):
+    def __init__(self, configuration):
         """
         To initialize the list, an entity configuration is needed.
-        :param entity_configuration: object of class EntityConfiguration
+        :param configuration: object of class EntityConfiguration
         """
-        self.entity_configuration = entity_configuration
+        self.configuration = configuration
         # list to stores entity objects
         self.list = []
         # session for data retrieval
@@ -218,10 +226,10 @@ class EntityList(object):
             logger.info("Reading entities from " + input_file + "...")
             reader = csv.reader(fp, delimiter=delimiter)
             header = next(reader, None)
-            parameter_indices = dict.fromkeys(self.entity_configuration.id_parameter_names
-                                              + self.entity_configuration.validation_parameter_names)
-            id_parameter_values = dict.fromkeys(self.entity_configuration.id_parameter_names)
-            validation_parameter_values = dict.fromkeys(self.entity_configuration.validation_parameter_names)
+            parameter_indices = dict.fromkeys(self.configuration.id_parameter_names
+                                              + self.configuration.validation_parameter_names)
+            id_parameter_values = dict.fromkeys(self.configuration.id_parameter_names)
+            validation_parameter_values = dict.fromkeys(self.configuration.validation_parameter_names)
 
             if not header:
                 raise IllegalArgumentError("Missing header in CSV file.")
@@ -251,10 +259,10 @@ class EntityList(object):
                             validation_parameter_values[parameter] = value
 
                     # create entity from values in row
-                    new_entity = Entity(self.entity_configuration, id_parameter_values, validation_parameter_values)
+                    new_entity = Entity(self.configuration, id_parameter_values, validation_parameter_values)
 
                     # check if entity already exists (if ignore_duplicates is configured)
-                    if self.entity_configuration.ignore_duplicates:
+                    if self.configuration.ignore_duplicates:
                         entity_exists = False
                         for entity in self.list:
                             if new_entity.equals(entity):

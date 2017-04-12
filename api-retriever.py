@@ -24,7 +24,7 @@ def get_argument_parser():
         dest='input_file'
     )
     arg_parser.add_argument(
-        '-e', '--export-dir',
+        '-o', '--output-dir',
         required=True,
         help='Path to output directory for retrieved data',
         dest='output_dir'
