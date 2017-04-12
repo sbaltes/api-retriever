@@ -4,6 +4,7 @@ import codecs
 import csv
 import json
 import logging
+import os
 import time
 import requests
 
@@ -48,6 +49,8 @@ class EntityConfiguration(object):
                 if parameter not in config["json_mapping"]:
                     raise IllegalConfigurationError("No JSON mapping for validation parameter " + parameter)
 
+            # name of configured entities
+            self.name = config["name"]
             # list with parameter names identifying the entity
             self.id_parameter_names = config["id_parameter_names"]
             # list with parameter names that should be validated using the API
@@ -178,9 +181,10 @@ class Entity(object):
                     value = data_json  # start with whole JSON object
                     for step in access_path:
                         try:
-                            value = data_json[step]
+                            value = value[step]
                         except KeyError:
-                            logger.debug("Could not retrieve data for parameter " + parameter + " of entity " + str(self))
+                            logger.error("Could not retrieve data for parameter " + parameter + " of entity " + str(self))
+                            value = None
                             break
                     if value:
                         if parameter in self.validation_parameters:
@@ -218,7 +222,7 @@ class EntityList(object):
         """
         Read entity ID and (optionally) validation parameters from a CSV file (header required).
         :param input_file: path to the CSV file
-        :param delimiter: column delimiter in CSV (typically ',')
+        :param delimiter: column delimiter in CSV file (typically ',')
         """
 
         # read CSV as UTF-8 encoded file (see also http://stackoverflow.com/a/844443)
@@ -285,4 +289,53 @@ class EntityList(object):
         count = 0
         for entity in self.list:
             count += entity.retrieve_data(self.session)
-        logger.info("Data about " + str(count) + " entities has been retrieved.")
+        logger.info("Data for " + str(count) + " entities has been retrieved.")
+
+    def write_to_csv(self, output_dir, delimiter):
+        """
+        Write entities together with retrieved data to a CSV file.
+        :param output_dir: target directory for generated CSV file 
+        :param delimiter: column delimiter in CSV file (typically ',')
+        """
+
+        if len(self.list) == 0:
+            logger.info("Nothing to write...")
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        file_path = os.path.join(
+            output_dir,
+            '{0}.csv'.format(self.configuration.name)
+        )
+
+        # write entity list to UTF8-encoded CSV file (see also http://stackoverflow.com/a/844443)
+        with codecs.open(file_path, 'w', encoding='utf8') as fp:
+            logger.info('Writing entities to ' + file_path + '...')
+            writer = csv.writer(fp, delimiter=delimiter)
+
+            # write header of CSV file
+            column_names = self.configuration.id_parameter_names + self.configuration.validation_parameter_names\
+                           + list(self.configuration.json_mapping.keys())
+            writer.writerow(column_names)
+
+            for entity in self.list:
+                try:
+                    row = []
+                    for column_name in column_names:
+                        if column_name in entity.id_parameters.keys():
+                            row.append(entity.id_parameters[column_name])
+                        elif column_name in entity.validation_parameters.keys():
+                            row.append(entity.validation_parameters[column_name])
+                        elif column_name in entity.api_parameters.keys():
+                            row.append(entity.api_parameters[column_name])
+
+                    if len(row) == len(column_names):
+                        writer.writerow(row)
+                    else:
+                        raise IllegalArgumentError("Parameters are missing for entity " + str(entity))
+
+                except UnicodeEncodeError:
+                    logger.error("Encoding error while writing data for entity: " + str(entity))
+
+            logger.info(str(len(self.list)) + ' entities were exported.')

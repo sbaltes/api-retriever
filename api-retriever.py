@@ -33,7 +33,7 @@ def get_argument_parser():
         '-d', '--delimiter',
         required=False,
         default=',',
-        help='delimiter in csv file (default: \',\')',
+        help='delimiter in csv files (default: \',\')',
         dest='delimiter'
     )
     return arg_parser
@@ -54,6 +54,8 @@ def main():
     # retrieve data using API
     entities.retrieve_data()
 
+    # write entities to CSV file
+    entities.write_to_csv(args.output_dir, args.delimiter)
 
 if __name__ == '__main__':
     main()
