@@ -12,12 +12,6 @@ def get_argument_parser():
         description='Retrieve data about entities using an API,'
     )
     arg_parser.add_argument(
-        '-c', '--config-file',
-        required=True,
-        help='JSON file with entity configuration.',
-        dest='config_file'
-    )
-    arg_parser.add_argument(
         '-i', '--input-file',
         required=True,
         help='CSV file with parameters for identifying entities and for validation.',
@@ -28,6 +22,12 @@ def get_argument_parser():
         required=True,
         help='Path to output directory for retrieved data',
         dest='output_dir'
+    )
+    arg_parser.add_argument(
+        '-c', '--config-file',
+        required=True,
+        help='JSON file with entity configuration.',
+        dest='config_file'
     )
     arg_parser.add_argument(
         '-d', '--delimiter',

@@ -14,6 +14,7 @@ from _socket import gaierror
 from requests.packages.urllib3.exceptions import MaxRetryError
 from requests.packages.urllib3.exceptions import NewConnectionError
 from uritemplate import URITemplate
+from retriever import callbacks
 from util.exceptions import IllegalArgumentError, IllegalConfigurationError
 
 # get root logger
@@ -23,10 +24,10 @@ logger = logging.getLogger('api-retriever_logger')
 class EntityConfiguration(object):
     """
     An API entity configuration specifies:
-        * how to identify an entity
-        * how to validate existing information about an entity (optionally)
-        * which information should be retrieved about an entity
-        * how this information should be extract from the JSON response.
+        * the input parameters for an entity
+        * if and how existing information about an entity should be validated (-> validation parameters)
+        * which information should be retrieved about an entity (-> output parameters)
+        * how this information should be extract from the API response (-> response callback).
     """
 
     def __init__(self, json_config_file):
@@ -44,21 +45,22 @@ class EntityConfiguration(object):
 
         # initialize configuration
         try:
-            # check if a JSON mapping exists for all validation parameters
-            for parameter in config["validation_parameter_names"]:
-                if parameter not in config["json_mapping"]:
-                    raise IllegalConfigurationError("No JSON mapping for validation parameter " + parameter)
-
             # name of configured entities
             self.name = config["name"]
-            # list with parameter names identifying the entity
-            self.id_parameter_names = config["id_parameter_names"]
-            # list with parameter names that should be validated using the API
-            self.validation_parameter_names = config["validation_parameter_names"]
-            # dictionary with mapping of parameter names to values in the JSON response
-            self.json_mapping = config["json_mapping"]
-            # URITemplate to retrieve information about an entity (may include API key)
+            # list with parameters that identify the entity (correspond to columns in the input CSV)
+            self.input_parameters = config["input_parameters"]
+            # list with parameters that are validated against the API (correspond to columns in the input CSV)
+            self.validation_parameters = config["validation_parameters"]
+            # dictionary with mapping of parameter names to values in the response
+            self.output_parameter_mapping = config["output_parameter_mapping"]
+            # uri templates to retrieve information about the entity (may include API key)
             self.uri_template = URITemplate(config["uri_template"])
+            # load callback to extract output parameters from an API response
+            try:
+                self.response_callback = getattr(callbacks, config["response_callback"])
+            except AttributeError:
+                raise IllegalConfigurationError("Parsing configuration file failed: Callback "
+                                                + config["response_callback"] + " not found.")
             # API key to include in the uri_template
             self.api_key = config["api_key"]
             # configure if duplicate values in the input files should be ignored.
@@ -66,8 +68,6 @@ class EntityConfiguration(object):
             # configure the randomized delay interval (ms) between two API requests (trying to prevent getting blocked)
             self.delay_min = config["delay"][0]
             self.delay_max = config["delay"][1]
-            # configure if list should be flattened using "join"
-            self.flatten_lists = config["flatten_lists"]
 
         except KeyError as e:
             raise IllegalConfigurationError("Parsing configuration file failed: Parameter " + str(e) + " not found.")
@@ -78,57 +78,57 @@ class Entity(object):
     Class representing one API entity for which information should be retrieved over an API.
     """
 
-    def __init__(self, configuration, id_parameter_values, validation_parameter_values):
+    def __init__(self, configuration, input_parameter_values, validation_parameter_values):
         """
-        To initialize an entity, a corresponding entity configuration together with values for the id parameter(s)
+        To initialize an entity, a corresponding entity configuration together with values for the input parameter(s)
         and (optional) validation parameter(s) are needed.
         :param configuration: an object of class EntityConfiguration
-        :param id_parameter_values: values for the id parameters defined in the configuration
+        :param input_parameter_values: values for the input parameters defined in the configuration
         :param validation_parameter_values: values for the validation parameters defined in the configuration
         """
 
-        # check if number of ID parameters matches number of values
-        if not len(id_parameter_values) == len(configuration.id_parameter_names):
-            raise IllegalArgumentError("Wrong number of ID parameter values: "
-                                       + str(len(id_parameter_values)))
+        # check if number of input parameters matches number of values
+        if not len(input_parameter_values) == len(configuration.input_parameters):
+            raise IllegalArgumentError("Wrong number of input parameter values: "
+                                       + str(len(input_parameter_values)))
 
         # check if number of validation parameters matches number of values
-        if not len(validation_parameter_values) == len(configuration.validation_parameter_names):
+        if not len(validation_parameter_values) == len(configuration.validation_parameters):
             raise IllegalArgumentError("Wrong number of validation parameter values: "
                                        + str(len(validation_parameter_values)))
 
         # corresponding entity configuration
         self.configuration = configuration
-        # parameters needed to identify entity
-        self.id_parameters = dict.fromkeys(configuration.id_parameter_names)
+        # parameters needed to identify entity read from CSV
+        self.input_parameters = dict.fromkeys(configuration.input_parameters)
         # optional parameters to validate existing entity parameters
-        self.validation_parameters = dict.fromkeys(configuration.validation_parameter_names)
-        # parameters that should be retrieved using API (must include validation parameters)
-        self.api_parameters = dict.fromkeys(configuration.json_mapping.keys())
+        self.validation_parameters = dict.fromkeys(configuration.validation_parameters)
+        # parameters that should be retrieved using the API
+        self.output_parameters = dict.fromkeys(configuration.output_parameter_mapping.keys())
 
-        # set values for ID parameters
-        for parameter_name in configuration.id_parameter_names:
-            if parameter_name not in id_parameter_values:
-                raise IllegalArgumentError("Illegal ID parameter name: " + parameter_name)
-            self.id_parameters[parameter_name] = id_parameter_values[parameter_name]
+        # set values for input parameters
+        for parameter in configuration.input_parameters:
+            if parameter not in input_parameter_values:
+                raise IllegalArgumentError("Illegal input parameter: " + parameter)
+            self.input_parameters[parameter] = input_parameter_values[parameter]
 
         # set values for validation parameters
-        for parameter_name in configuration.validation_parameter_names:
-            if parameter_name not in validation_parameter_values:
-                raise IllegalArgumentError("Illegal validation parameter name: " + parameter_name)
-            self.validation_parameters[parameter_name] = validation_parameter_values[parameter_name]
+        for parameter in configuration.validation_parameters:
+            if parameter not in validation_parameter_values:
+                raise IllegalArgumentError("Illegal validation parameter: " + parameter)
+            self.validation_parameters[parameter] = validation_parameter_values[parameter]
 
     def equals(self, other_entity):
         """
-        Function to compare two entities according to their ID parameters (needed to remove duplicates).
+        Function to compare two entities according to their input parameters (needed to remove duplicates).
         :param other_entity: the entity to compare self to
-        :return: True if entities have the same ID parameters, False otherwise
+        :return: True if entities have the same input parameters, False otherwise
         """
 
-        # compare ID parameters
-        for parameter in self.id_parameters.keys():
+        # compare input parameters
+        for parameter in self.input_parameters.keys():
             try:
-                if not self.id_parameters[parameter] == other_entity.id_parameters[parameter]:
+                if not self.input_parameters[parameter] == other_entity.input_parameters[parameter]:
                     return False
             except KeyError:
                 # parameter does not exist in other entity
@@ -136,34 +136,37 @@ class Entity(object):
         return True
 
     def __str__(self):
-        return str(self.id_parameters)
+        return str(self.input_parameters)
 
     def retrieve_data(self, session):
         """
-        Retrieve information about entity using existing session.
+        Retrieve information about entity using an existing session.
         :param session: requests session to use for data retrieval
-        :return: 1 if data about entity has been retrieved, 0 otherwise
+        :return: True if data about entity has been retrieved, False otherwise
         """
 
         try:
-            logger.info("Retrieving data for entity: " + str(self))
+            logger.info("Retrieving data for entity " + str(self) + "...")
 
-            # expand URI for this entity
+            # get parameter mapping for uri template
             uri_parameter_mapping = dict.fromkeys(self.configuration.uri_template.variable_names)
             for var in uri_parameter_mapping.keys():
                 if var == "api_key":
                     val = self.configuration.api_key
                 else:
-                    val = self.id_parameters.get(var, None)
+                    val = self.input_parameters.get(var, None)
 
                 if val:
                     uri_parameter_mapping[var] = val
                 else:
                     IllegalArgumentError("Value for URI parameter " + var + " missing.")
+
+            # expand default URI template
             uri = self.configuration.uri_template.expand(uri_parameter_mapping)
 
             # reduce request frequency as configured
-            delay = randint(self.configuration.delay_min, self.configuration.delay_max)  # delay between requests in milliseconds
+            delay = randint(self.configuration.delay_min,
+                            self.configuration.delay_max)  # delay between requests in milliseconds
             time.sleep(delay / 1000)  # sleep for delay ms to not get blocked by Airbnb
 
             # retrieve data
@@ -172,48 +175,16 @@ class Entity(object):
             if not data.ok:
                 logger.error("Error " + str(data.status_code) + ": Could not retrieve data for entity " + str(self)
                              + ". Response: " + str(data.content))
-                return 0
+                return False
             else:
-                # deserialize JSON string
-                data_json = json.loads(data.text)
-
-                # extract data for all parameters according to access path defined in JSON mapping
-                for parameter in self.configuration.json_mapping:
-                    access_path = self.configuration.json_mapping[parameter]
-                    value = data_json  # start with whole JSON object
-                    for step in access_path:
-                        try:
-                            value = value[step]
-                        except KeyError:
-                            logger.error("Could not retrieve data for parameter " + parameter + " of entity " + str(self))
-                            value = None
-                            break
-                    if value:
-                        # if flatten_lists is configured and value is a list, flatten it
-                        if self.configuration.flatten_lists and isinstance(value, list):
-                            value = ", ".join(value)
-
-                        if parameter in self.validation_parameters:
-                            if str(value) == str(self.validation_parameters[parameter]):
-                                logger.info("Validation successful for parameter " + parameter
-                                            + " of entity " + str(self) + ".")
-                            else:
-                                logger.error("Validation failed for parameter " + parameter
-                                             + " of entity " + str(self)
-                                             + ": Expected: " + self.validation_parameters[parameter]
-                                             + ", Actual: " + str(value) + ".")
-                        else:
-                            self.api_parameters[parameter] = value
-                    else:
-                        logger.debug("Could not retrieve data for parameter " + parameter + " of entity " + str(self))
-
-                logger.info("Retrieved data for entity: " + str(self))
-                return 1
+                logger.info("Successfully retrieved data for entity " + str(self) + ".")
+                self.configuration.response_callback(self, data.text)
+                return True
         except (gaierror,
                 ConnectionError,
                 MaxRetryError,
                 NewConnectionError):
-            logger.error("An error occurred while getting data for entity  " + str(self))
+            logger.error("An error occurred while retrieving data for entity  " + str(self))
 
 
 class EntityList(object):
@@ -242,19 +213,20 @@ class EntityList(object):
             logger.info("Reading entities from " + input_file + "...")
             reader = csv.reader(fp, delimiter=delimiter)
             header = next(reader, None)
-            parameter_indices = dict.fromkeys(self.configuration.id_parameter_names
-                                              + self.configuration.validation_parameter_names)
-            id_parameter_values = dict.fromkeys(self.configuration.id_parameter_names)
-            validation_parameter_values = dict.fromkeys(self.configuration.validation_parameter_names)
+            # save column indices for input and validation parameters
+            parameter_indices = dict.fromkeys(self.configuration.input_parameters
+                                              + self.configuration.validation_parameters)
+            input_parameter_values = dict.fromkeys(self.configuration.input_parameters)
+            validation_parameter_values = dict.fromkeys(self.configuration.validation_parameters)
 
             if not header:
                 raise IllegalArgumentError("Missing header in CSV file.")
 
-            # number of columns must equal number of ID and validation parameters
+            # number of columns must equal number of input and validation parameters
             if not len(header) == len(parameter_indices):
                 raise IllegalArgumentError("Wrong number of columns in CSV file.")
 
-            # check if columns and parameters match, store index
+            # check if columns and parameters match, store indices
             for index in range(len(header)):
                 if not header[index] in parameter_indices.keys():
                     raise IllegalArgumentError("Unknown column name in CSV file: " + header[index])
@@ -269,13 +241,13 @@ class EntityList(object):
                         if not value:
                             raise IllegalArgumentError("No value for parameter " + parameter)
 
-                        if parameter in id_parameter_values.keys():  # ID parameter
-                            id_parameter_values[parameter] = value
+                        if parameter in input_parameter_values.keys():  # input parameter
+                            input_parameter_values[parameter] = value
                         elif parameter in validation_parameter_values.keys():  # validation parameter
                             validation_parameter_values[parameter] = value
 
                     # create entity from values in row
-                    new_entity = Entity(self.configuration, id_parameter_values, validation_parameter_values)
+                    new_entity = Entity(self.configuration, input_parameter_values, validation_parameter_values)
 
                     # check if entity already exists (if ignore_duplicates is configured)
                     if self.configuration.ignore_duplicates:
@@ -300,7 +272,8 @@ class EntityList(object):
         """
         count = 0
         for entity in self.list:
-            count += entity.retrieve_data(self.session)
+            if entity.retrieve_data(self.session):
+                count += 1
         logger.info("Data for " + str(count) + " entities has been retrieved.")
 
     def write_to_csv(self, output_dir, delimiter):
@@ -327,25 +300,25 @@ class EntityList(object):
             writer = csv.writer(fp, delimiter=delimiter)
 
             # write header of CSV file
-            column_names = self.configuration.id_parameter_names + self.configuration.validation_parameter_names\
-                           + list(self.configuration.json_mapping.keys())
+            column_names = self.configuration.input_parameters + self.configuration.validation_parameters \
+                + list(self.configuration.output_parameter_mapping.keys())
             writer.writerow(column_names)
 
             for entity in self.list:
                 try:
                     row = []
                     for column_name in column_names:
-                        if column_name in entity.id_parameters.keys():
-                            row.append(entity.id_parameters[column_name])
+                        if column_name in entity.input_parameters.keys():
+                            row.append(entity.input_parameters[column_name])
                         elif column_name in entity.validation_parameters.keys():
                             row.append(entity.validation_parameters[column_name])
-                        elif column_name in entity.api_parameters.keys():
-                            row.append(entity.api_parameters[column_name])
-
+                        elif column_name in entity.output_parameters.keys():
+                            row.append(entity.output_parameters[column_name])
                     if len(row) == len(column_names):
                         writer.writerow(row)
                     else:
-                        raise IllegalArgumentError("Parameters are missing for entity " + str(entity))
+                        raise IllegalArgumentError(str(len(row) - len(column_names)) + " parameters are missing for"
+                                                                                       "entity " + str(entity))
 
                 except UnicodeEncodeError:
                     logger.error("Encoding error while writing data for entity: " + str(entity))
