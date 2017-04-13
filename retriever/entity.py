@@ -56,12 +56,14 @@ class EntityConfiguration(object):
             self.output_parameter_mapping = config["output_parameter_mapping"]
             # uri templates to retrieve information about the entity (may include API key)
             self.uri_template = URITemplate(config["uri_template"])
-            # load callback to extract output parameters from a JSON API response
-            try:
-                self.response_callback = getattr(callbacks, config["response_callback"])
-            except AttributeError:
-                raise IllegalConfigurationError("Parsing configuration file failed: Callback "
-                                                + config["response_callback"] + " not found.")
+            # load callbacks to extract and process output parameters from a JSON API response
+            self.response_callbacks = []
+            for response_callback in config["response_callbacks"]:
+                try:
+                    self.response_callbacks.append(getattr(callbacks, response_callback))
+                except AttributeError:
+                    raise IllegalConfigurationError("Parsing configuration file failed: Callback "
+                                                    + response_callback + " not found.")
             # API key to include in the uri_template
             self.api_key = config["api_key"]
             # configure if duplicate values in the input files should be ignored.
@@ -120,8 +122,10 @@ class Entity(object):
             self.validation_parameters[parameter] = validation_parameter_values[parameter]
 
         # get uri for this entity from uri template in configuration
-        uri_variable_values = self.input_parameters
-        uri_variable_values["api_key"] = self.configuration.api_key
+        uri_variable_values = {
+            **self.input_parameters,
+            "api_key": self.configuration.api_key
+        }
         self.uri = self.configuration.uri_template.replace_variables(uri_variable_values)
 
     def equals(self, other_entity):
@@ -170,7 +174,8 @@ class Entity(object):
                 logger.info("Successfully retrieved data for entity " + str(self) + ".")
                 # deserialize JSON string
                 json_response = json.loads(response.text)
-                self.configuration.response_callback(self, json_response)
+                for response_callback in self.configuration.response_callbacks:
+                    response_callback(self, json_response)
                 return True
         except (gaierror,
                 ConnectionError,

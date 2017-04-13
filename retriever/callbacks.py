@@ -3,14 +3,13 @@
 import logging
 
 from dateutil import parser
-from util.uri_template import URITemplate
 
 
 # get root logger
 logger = logging.getLogger('api-retriever_logger')
 
 
-def save_parameters(entity, json_response):
+def extract_parameters(entity, json_response):
     """
     Default callback that extracts and saves all parameters defined in the output parameter mapping
     and validates all validation parameters.
@@ -71,19 +70,17 @@ def save_parameters(entity, json_response):
                 entity.output_parameters[parameter] = parameter_value
 
 
-def gh_snippet_commits(entity, json_response):
-    save_parameters(entity, json_response)
-
+def gh_sort_commits(entity, json_response):
+    # parse commit date strings (ISO 8601) into a python datetime object (see http://stackoverflow.com/a/3908349)
     for commit in entity.output_parameters["commits"]:
-        # parse string with ISO 8601 commit date into a python datetime object (see http://stackoverflow.com/a/3908349)
         commit["commit_date"] = parser.parse(commit["commit_date"])
 
     # sort commits (oldest commits first)
     entity.output_parameters["commits"] = sorted(entity.output_parameters["commits"], key=lambda c: c["commit_date"])
 
-    # search for match of code_block in commit diff
-    uri_template = URITemplate("https://api.github.com/repos/{repo_name}/commits/{commit_sha}?access_token={api_key}")
-
+    # convert commit dates back to string representation
+    for commit in entity.output_parameters["commits"]:
+        commit["commit_date"] = str(commit["commit_date"])
 
 
 def _filter_json(json_response, access_path):
