@@ -13,9 +13,10 @@ from jsmin import jsmin
 from _socket import gaierror
 from requests.packages.urllib3.exceptions import MaxRetryError
 from requests.packages.urllib3.exceptions import NewConnectionError
-from uritemplate import URITemplate
 from retriever import callbacks
 from util.exceptions import IllegalArgumentError, IllegalConfigurationError
+from util.regex import URI_TEMPLATE_VARS_REGEX
+
 
 # get root logger
 logger = logging.getLogger('api-retriever_logger')
@@ -54,8 +55,8 @@ class EntityConfiguration(object):
             # dictionary with mapping of parameter names to values in the response
             self.output_parameter_mapping = config["output_parameter_mapping"]
             # uri templates to retrieve information about the entity (may include API key)
-            self.uri_template = URITemplate(config["uri_template"])
-            # load callback to extract output parameters from an API response
+            self.uri_template = config["uri_template"]
+            # load callback to extract output parameters from a JSON API response
             try:
                 self.response_callback = getattr(callbacks, config["response_callback"])
             except AttributeError:
@@ -118,6 +119,21 @@ class Entity(object):
                 raise IllegalArgumentError("Illegal validation parameter: " + parameter)
             self.validation_parameters[parameter] = validation_parameter_values[parameter]
 
+        # get uri for this entity from uri template in configuration
+        self.uri = self.configuration.uri_template
+        uri_variables = URI_TEMPLATE_VARS_REGEX.findall(self.configuration.uri_template)
+
+        for variable in uri_variables:
+            if variable == "api_key":
+                value = self.configuration.api_key
+            else:
+                value = self.input_parameters.get(variable, None)
+
+            if value:
+                self.uri = self.uri.replace("{" + variable + "}", value)
+            else:
+                IllegalArgumentError("Value for URI parameter " + variable + " missing.")
+
     def equals(self, other_entity):
         """
         Function to compare two entities according to their input parameters (needed to remove duplicates).
@@ -148,37 +164,23 @@ class Entity(object):
         try:
             logger.info("Retrieving data for entity " + str(self) + "...")
 
-            # get parameter mapping for uri template
-            uri_parameter_mapping = dict.fromkeys(self.configuration.uri_template.variable_names)
-            for var in uri_parameter_mapping.keys():
-                if var == "api_key":
-                    val = self.configuration.api_key
-                else:
-                    val = self.input_parameters.get(var, None)
-
-                if val:
-                    uri_parameter_mapping[var] = val
-                else:
-                    IllegalArgumentError("Value for URI parameter " + var + " missing.")
-
-            # expand default URI template
-            uri = self.configuration.uri_template.expand(uri_parameter_mapping)
-
             # reduce request frequency as configured
             delay = randint(self.configuration.delay_min,
                             self.configuration.delay_max)  # delay between requests in milliseconds
             time.sleep(delay / 1000)  # sleep for delay ms to not get blocked by Airbnb
 
             # retrieve data
-            data = session.get(uri)
+            response = session.get(self.uri)
 
-            if not data.ok:
-                logger.error("Error " + str(data.status_code) + ": Could not retrieve data for entity " + str(self)
-                             + ". Response: " + str(data.content))
+            if not response.ok:
+                logger.error("Error " + str(response.status_code) + ": Could not retrieve data for entity " + str(self)
+                             + ". Response: " + str(response.content))
                 return False
             else:
                 logger.info("Successfully retrieved data for entity " + str(self) + ".")
-                self.configuration.response_callback(self, data.text)
+                # deserialize JSON string
+                json_response = json.loads(response.text)
+                self.configuration.response_callback(self, json_response)
                 return True
         except (gaierror,
                 ConnectionError,

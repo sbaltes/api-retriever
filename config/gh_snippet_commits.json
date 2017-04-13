@@ -1,13 +1,18 @@
 /* Configuration for GH commits adding certain code snippets. */
 {
   "name": "gh_snippet_commits",
-  "input_parameters": ["repo_name", "path", "code_block", "code_block_norm"],
-  "validation_parameters": [],
+  "input_parameters": ["repo_name", "path"],
+  "validation_parameters": ["code_block", "code_block_normalized"],
   "output_parameter_mapping": {
-    "commit_sha": ["sha"],
-    "commit_date": ["commit", "author", "date"]
+    "commits": [
+      "*",
+      {
+        "commit_sha": ["sha"],
+        "commit_date": ["commit", "author", "date"]
+      }
+    ]
   },
-  "response_callback": "gh_snippet_commits",
+  "response_callback": "save_parameters",
   "uri_template": "https://api.github.com/repos/{repo_name}/commits?path={path}&access_token={api_key}",
   "api_key": "", // add API key here
   "ignore_duplicates": false,
