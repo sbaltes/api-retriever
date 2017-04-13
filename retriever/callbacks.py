@@ -2,6 +2,9 @@
 
 import logging
 
+from dateutil import parser
+from util.uri_template import URITemplate
+
 
 # get root logger
 logger = logging.getLogger('api-retriever_logger')
@@ -68,7 +71,30 @@ def save_parameters(entity, json_response):
                 entity.output_parameters[parameter] = parameter_value
 
 
+def gh_snippet_commits(entity, json_response):
+    save_parameters(entity, json_response)
+
+    for commit in entity.output_parameters["commits"]:
+        # parse string with ISO 8601 commit date into a python datetime object (see http://stackoverflow.com/a/3908349)
+        commit["commit_date"] = parser.parse(commit["commit_date"])
+
+    # sort commits (oldest commits first)
+    entity.output_parameters["commits"] = sorted(entity.output_parameters["commits"], key=lambda c: c["commit_date"])
+
+    # search for match of code_block in commit diff
+    uri_template = URITemplate("https://api.github.com/repos/{repo_name}/commits/{commit_sha}?access_token={api_key}")
+
+
+
 def _filter_json(json_response, access_path):
+    """
+    Use an access path (e.g., ["user", "first_name"]) to filter a JSON object (dictionary).
+    :param json_response: the json object to filter
+    :param access_path: a list with keys for filtering the dictionary
+    :return: the resulting value
+    :raises: KeyError if filtering using access_path is not possible in json_response
+    """
+
     # start with whole JSON response
     result = json_response
 
@@ -77,6 +103,3 @@ def _filter_json(json_response, access_path):
         result = result[step]
 
     return result
-
-
-

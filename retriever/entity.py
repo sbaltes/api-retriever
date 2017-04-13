@@ -15,7 +15,7 @@ from requests.packages.urllib3.exceptions import MaxRetryError
 from requests.packages.urllib3.exceptions import NewConnectionError
 from retriever import callbacks
 from util.exceptions import IllegalArgumentError, IllegalConfigurationError
-from util.regex import URI_TEMPLATE_VARS_REGEX
+from util.uri_template import URITemplate
 
 
 # get root logger
@@ -55,7 +55,7 @@ class EntityConfiguration(object):
             # dictionary with mapping of parameter names to values in the response
             self.output_parameter_mapping = config["output_parameter_mapping"]
             # uri templates to retrieve information about the entity (may include API key)
-            self.uri_template = config["uri_template"]
+            self.uri_template = URITemplate(config["uri_template"])
             # load callback to extract output parameters from a JSON API response
             try:
                 self.response_callback = getattr(callbacks, config["response_callback"])
@@ -120,19 +120,9 @@ class Entity(object):
             self.validation_parameters[parameter] = validation_parameter_values[parameter]
 
         # get uri for this entity from uri template in configuration
-        self.uri = self.configuration.uri_template
-        uri_variables = URI_TEMPLATE_VARS_REGEX.findall(self.configuration.uri_template)
-
-        for variable in uri_variables:
-            if variable == "api_key":
-                value = self.configuration.api_key
-            else:
-                value = self.input_parameters.get(variable, None)
-
-            if value:
-                self.uri = self.uri.replace("{" + variable + "}", value)
-            else:
-                IllegalArgumentError("Value for URI parameter " + variable + " missing.")
+        uri_variable_values = self.input_parameters
+        uri_variable_values["api_key"] = self.configuration.api_key
+        self.uri = self.configuration.uri_template.replace_variables(uri_variable_values)
 
     def equals(self, other_entity):
         """
