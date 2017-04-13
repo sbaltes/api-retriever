@@ -1,0 +1,34 @@
+/* Configuration for Airbnb hosts. */
+{
+  "name": "airbnb_hosts",
+  "input_parameters": ["host_id"],
+  "validation_parameters": [],
+  "output_parameter_mapping": {
+    "first_name": ["user", "first_name"],
+    "smart_name": ["user", "smart_name"],
+    "created_at": ["user", "created_at"],
+    "identity_verified": ["user", "identity_verified"],
+    "is_superhost": ["user", "is_superhost"],
+    "recommendation_count": ["user", "recommendation_count"],
+    "response_rate": ["user", "response_rate"],
+    "response_time": ["user", "response_time"],
+    "reviewee_count": ["user", "reviewee_count"],
+    "neighborhood": ["user", "neighborhood"],
+    "friends_count": ["user", "friends_count"],
+    "has_available_payout_info": ["user", "has_available_payout_info"],
+    "is_generated_user": ["user", "is_generated_user"],
+    "is_trip_host": ["user", "is_trip_host"],
+    "languages": ["user", "languages"],
+    "listings_count": ["user", "listings_count"],
+    "location": ["user", "location"],
+    "school": ["user", "school"],
+    "show_travel_for_work": ["user", "show_travel_for_work"],
+    "total_listings_count": ["user", "total_listings_count"],
+    "work": ["user", "work"]
+  },
+  "uri_template": "https://api.airbnb.com/v2/users/{host_id}?client_id={api_key}&_format=v1_legacy_show",
+  "response_callback": "save_parameters",
+  "api_key": "", // add API key here
+  "ignore_duplicates": true,
+  "delay": [40, 1000]
+}
