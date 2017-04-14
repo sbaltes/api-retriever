@@ -6,6 +6,8 @@ import json
 import logging
 import os
 import time
+from inspect import signature
+
 import requests
 
 from random import randint
@@ -56,14 +58,22 @@ class EntityConfiguration(object):
             self.output_parameter_mapping = config["output_parameter_mapping"]
             # uri templates to retrieve information about the entity (may include API key)
             self.uri_template = URITemplate(config["uri_template"])
-            # load callbacks to extract and process output parameters from a JSON API response
-            self.response_callbacks = []
-            for response_callback in config["response_callbacks"]:
+            # load pre_request_callbacks to validate and/or process the parameters before the request to the API is made
+            self.pre_request_callbacks = []
+            for callback in config["pre_request_callbacks"]:
                 try:
-                    self.response_callbacks.append(getattr(callbacks, response_callback))
+                    self.pre_request_callbacks.append(getattr(callbacks, callback))
                 except AttributeError:
                     raise IllegalConfigurationError("Parsing configuration file failed: Callback "
-                                                    + response_callback + " not found.")
+                                                    + callback + " not found.")
+            # load post_request_callbacks to extract and/or process output parameters from a JSON API response
+            self.post_request_callbacks = []
+            for callback in config["post_request_callbacks"]:
+                try:
+                    self.post_request_callbacks.append(getattr(callbacks, callback))
+                except AttributeError:
+                    raise IllegalConfigurationError("Parsing configuration file failed: Callback "
+                                                    + callback + " not found.")
             # API key to include in the uri_template
             self.api_key = config["api_key"]
             # configure if duplicate values in the input files should be ignored.
@@ -81,7 +91,7 @@ class Entity(object):
     Class representing one API entity for which information should be retrieved over an API.
     """
 
-    def __init__(self, configuration, input_parameter_values, validation_parameter_values):
+    def __init__(self, configuration, input_parameter_values, validation_parameter_values=None):
         """
         To initialize an entity, a corresponding entity configuration together with values for the input parameter(s)
         and (optional) validation parameter(s) are needed.
@@ -91,6 +101,8 @@ class Entity(object):
         """
 
         # check if number of input parameters matches number of values
+        if validation_parameter_values is None:
+            validation_parameter_values = {}
         if not len(input_parameter_values) == len(configuration.input_parameters):
             raise IllegalArgumentError("Wrong number of input parameter values: "
                                        + str(len(input_parameter_values)))
@@ -158,6 +170,14 @@ class Entity(object):
         try:
             logger.info("Retrieving data for entity " + str(self) + "...")
 
+            # execute pre_request_callbacks
+            for callback in self.configuration.pre_request_callbacks:
+                parameter_count = len(signature(callback).parameters)
+                if parameter_count == 1:
+                    callback(self)
+                else:
+                    raise IllegalArgumentError("Invalid callback: " + str(callback))
+
             # reduce request frequency as configured
             delay = randint(self.configuration.delay_min,
                             self.configuration.delay_max)  # delay between requests in milliseconds
@@ -174,8 +194,17 @@ class Entity(object):
                 logger.info("Successfully retrieved data for entity " + str(self) + ".")
                 # deserialize JSON string
                 json_response = json.loads(response.text)
-                for response_callback in self.configuration.response_callbacks:
-                    response_callback(self, json_response)
+
+                # execute post_request_callbacks
+                for callback in self.configuration.post_request_callbacks:
+                    parameter_count = len(signature(callback).parameters)
+                    if parameter_count == 1:
+                        callback(self)
+                    elif parameter_count == 2:
+                        callback(self, json_response)
+                    else:
+                        raise IllegalArgumentError("Invalid callback: " + str(callback))
+
                 return True
         except (gaierror,
                 ConnectionError,

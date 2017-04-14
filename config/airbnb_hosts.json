@@ -27,7 +27,8 @@
     "work": ["user", "work"]
   },
   "uri_template": "https://api.airbnb.com/v2/users/{host_id}?client_id={api_key}&_format=v1_legacy_show",
-  "response_callbacks": ["extract_parameters"],
+  "pre_request_callbacks": [],
+  "post_request_callbacks": ["extract_parameters"],
   "api_key": "", // add API key here
   "ignore_duplicates": true,
   "delay": [40, 1000]

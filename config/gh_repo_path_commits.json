@@ -12,7 +12,8 @@
       }
     ]
   },
-  "response_callbacks": ["extract_parameters", "gh_sort_commits"],
+  "pre_request_callbacks": ["validate_code_block_normalization"],
+  "post_request_callbacks": ["extract_parameters", "sort_commits"],
   "uri_template": "https://api.github.com/repos/{repo_name}/commits?path={path}&access_token={api_key}",
   "api_key": "", // add API key here
   "ignore_duplicates": false,
