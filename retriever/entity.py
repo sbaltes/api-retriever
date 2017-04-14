@@ -16,9 +16,9 @@ from _socket import gaierror
 from requests.packages.urllib3.exceptions import MaxRetryError
 from requests.packages.urllib3.exceptions import NewConnectionError
 from retriever import callbacks
+from util.data_processing import get_value_from_nested_dictionary
 from util.exceptions import IllegalArgumentError, IllegalConfigurationError
 from util.uri_template import URITemplate
-
 
 # get root logger
 logger = logging.getLogger('api-retriever_logger')
@@ -33,27 +33,17 @@ class EntityConfiguration(object):
         * how this information should be extract from the API response (-> response callback).
     """
 
-    def __init__(self, json_config_file):
+    def __init__(self, config):
         """
-        Create API entity configuration from a JSON file.
-        :param json_config_file: path to the JSON file with the configuration
+        Initialize an API entity configuration from a config dictionary.
+        :param config: a dictionary with all required parameters
         """
 
-        # read config file
-        with open(json_config_file) as config_file:
-            # remove comments from JSON file (which we allow, but the standard does not)
-            stripped_json = jsmin(config_file.read())
-            # parse JSON file
-            config = json.loads(stripped_json)
-
-        # initialize configuration
         try:
             # name of configured entities
             self.name = config["name"]
             # list with parameters that identify the entity (correspond to columns in the input CSV)
             self.input_parameters = config["input_parameters"]
-            # list with parameters that are validated against the API (correspond to columns in the input CSV)
-            self.validation_parameters = config["validation_parameters"]
             # dictionary with mapping of parameter names to values in the response
             self.output_parameter_mapping = config["output_parameter_mapping"]
             # uri templates to retrieve information about the entity (may include API key)
@@ -83,7 +73,23 @@ class EntityConfiguration(object):
             self.delay_max = config["delay"][1]
 
         except KeyError as e:
-            raise IllegalConfigurationError("Parsing configuration file failed: Parameter " + str(e) + " not found.")
+            raise IllegalConfigurationError("Reading configuration failed: Parameter " + str(e) + " not found.")
+
+    @classmethod
+    def create_from_json(cls, json_config_file):
+        """
+        Create API entity configuration from a JSON file.
+        :param json_config_file: path to the JSON file with the configuration
+        """
+
+        # read config file
+        with open(json_config_file) as config_file:
+            # remove comments from JSON file (which we allow, but the standard does not)
+            stripped_json = jsmin(config_file.read())
+            # parse JSON file
+            config = json.loads(stripped_json)
+
+        return EntityConfiguration(config)
 
 
 class Entity(object):
@@ -91,33 +97,18 @@ class Entity(object):
     Class representing one API entity for which information should be retrieved over an API.
     """
 
-    def __init__(self, configuration, input_parameter_values, validation_parameter_values=None):
+    def __init__(self, configuration, input_parameter_values):
         """
         To initialize an entity, a corresponding entity configuration together with values for the input parameter(s)
         and (optional) validation parameter(s) are needed.
         :param configuration: an object of class EntityConfiguration
         :param input_parameter_values: values for the input parameters defined in the configuration
-        :param validation_parameter_values: values for the validation parameters defined in the configuration
         """
-
-        # check if number of input parameters matches number of values
-        if validation_parameter_values is None:
-            validation_parameter_values = {}
-        if not len(input_parameter_values) == len(configuration.input_parameters):
-            raise IllegalArgumentError("Wrong number of input parameter values: "
-                                       + str(len(input_parameter_values)))
-
-        # check if number of validation parameters matches number of values
-        if not len(validation_parameter_values) == len(configuration.validation_parameters):
-            raise IllegalArgumentError("Wrong number of validation parameter values: "
-                                       + str(len(validation_parameter_values)))
 
         # corresponding entity configuration
         self.configuration = configuration
         # parameters needed to identify entity read from CSV
         self.input_parameters = dict.fromkeys(configuration.input_parameters)
-        # optional parameters to validate existing entity parameters
-        self.validation_parameters = dict.fromkeys(configuration.validation_parameters)
         # parameters that should be retrieved using the API
         self.output_parameters = dict.fromkeys(configuration.output_parameter_mapping.keys())
 
@@ -126,12 +117,6 @@ class Entity(object):
             if parameter not in input_parameter_values:
                 raise IllegalArgumentError("Illegal input parameter: " + parameter)
             self.input_parameters[parameter] = input_parameter_values[parameter]
-
-        # set values for validation parameters
-        for parameter in configuration.validation_parameters:
-            if parameter not in validation_parameter_values:
-                raise IllegalArgumentError("Illegal validation parameter: " + parameter)
-            self.validation_parameters[parameter] = validation_parameter_values[parameter]
 
         # get uri for this entity from uri template in configuration
         uri_variable_values = {
@@ -192,8 +177,12 @@ class Entity(object):
                 return False
             else:
                 logger.info("Successfully retrieved data for entity " + str(self) + ".")
+
                 # deserialize JSON string
                 json_response = json.loads(response.text)
+
+                # extract parameters according to parameter mapping
+                self._extract_output_parameters(json_response)
 
                 # execute post_request_callbacks
                 for callback in self.configuration.post_request_callbacks:
@@ -206,11 +195,68 @@ class Entity(object):
                         raise IllegalArgumentError("Invalid callback: " + str(callback))
 
                 return True
+
         except (gaierror,
                 ConnectionError,
                 MaxRetryError,
                 NewConnectionError):
             logger.error("An error occurred while retrieving data for entity  " + str(self))
+
+    def _extract_output_parameters(self, json_response):
+        """
+        Extracts and saves all parameters defined in the output parameter mapping.
+        :param json_response: the API response as JSON object
+        """
+
+        # extract data for all parameters according to access path defined in the entity configuration
+        for parameter in self.configuration.output_parameter_mapping.keys():
+            mapping = self.configuration.output_parameter_mapping[parameter]
+
+            if mapping[0] == "*":  # mapping starts with asterisk -> root of JSON response is list (JSON array)
+
+                if len(mapping) == 1:  # if no further arguments are provided, save complete list
+                    for element in json_response:
+                        self.output_parameters[parameter] = element
+                    return
+
+                if len(mapping) == 2:  # second element is mapping for list element parameters
+                    list_element_mapping = mapping[1]
+                    extracted_list_elements = []  # extracted parameters from list elements are stored here
+
+                    for element in json_response:
+                        list_element_parameters = dict.fromkeys(list_element_mapping.keys())
+
+                        for list_element_parameter in list_element_parameters.keys():
+                            access_path = list_element_mapping[list_element_parameter]
+                            try:
+                                parameter_value = get_value_from_nested_dictionary(element, access_path)
+                            except KeyError:
+                                logger.error("Could not retrieve data for parameter " + parameter
+                                             + " of entity " + str(self))
+                                parameter_value = None
+                            list_element_parameters[list_element_parameter] = parameter_value
+
+                        extracted_list_elements.append(list_element_parameters)
+
+                    self.output_parameters[parameter] = extracted_list_elements
+                    return
+
+            elif mapping[0] == ".":  # mapping starts with dot -> root of JSON response is dictionary (JSON object)
+
+                access_path = mapping[1] # second element is access path for dictionary
+
+                try:
+                    parameter_value = get_value_from_nested_dictionary(json_response, access_path)
+                except KeyError:
+                    logger.error("Could not retrieve data for parameter " + parameter
+                                 + " of entity " + str(self))
+                    parameter_value = None
+
+                self.output_parameters[parameter] = parameter_value
+
+            else:
+                raise IllegalConfigurationError("First element of output parameter mapping must be '.' (dictionary) or"
+                                                "'*' (list).")
 
 
 class EntityList(object):
@@ -239,41 +285,35 @@ class EntityList(object):
             logger.info("Reading entities from " + input_file + "...")
             reader = csv.reader(fp, delimiter=delimiter)
             header = next(reader, None)
-            # save column indices for input and validation parameters
-            parameter_indices = dict.fromkeys(self.configuration.input_parameters
-                                              + self.configuration.validation_parameters)
-            input_parameter_values = dict.fromkeys(self.configuration.input_parameters)
-            validation_parameter_values = dict.fromkeys(self.configuration.validation_parameters)
+            input_parameter_indices = dict.fromkeys(self.configuration.input_parameters)  # column indices in CSV
+            input_parameter_values = dict.fromkeys(self.configuration.input_parameters)  # values for input parameters
 
             if not header:
                 raise IllegalArgumentError("Missing header in CSV file.")
 
-            # number of columns must equal number of input and validation parameters
-            if not len(header) == len(parameter_indices):
+            # number of columns must equal number of input parameters
+            if not len(header) == len(input_parameter_indices):
                 raise IllegalArgumentError("Wrong number of columns in CSV file.")
 
             # check if columns and parameters match, store indices
             for index in range(len(header)):
-                if not header[index] in parameter_indices.keys():
+                if not header[index] in input_parameter_indices.keys():
                     raise IllegalArgumentError("Unknown column name in CSV file: " + header[index])
-                parameter_indices[header[index]] = index
+                input_parameter_indices[header[index]] = index
 
             # read CSV file
             for row in reader:
                 if row:
                     # read parameters
-                    for parameter in parameter_indices.keys():
-                        value = row[parameter_indices[parameter]]
-                        if not value:
+                    for parameter in input_parameter_indices.keys():
+                        value = row[input_parameter_indices[parameter]]
+                        if value:
+                            input_parameter_values[parameter] = value
+                        else:
                             raise IllegalArgumentError("No value for parameter " + parameter)
 
-                        if parameter in input_parameter_values.keys():  # input parameter
-                            input_parameter_values[parameter] = value
-                        elif parameter in validation_parameter_values.keys():  # validation parameter
-                            validation_parameter_values[parameter] = value
-
                     # create entity from values in row
-                    new_entity = Entity(self.configuration, input_parameter_values, validation_parameter_values)
+                    new_entity = Entity(self.configuration, input_parameter_values)
 
                     # check if entity already exists (if ignore_duplicates is configured)
                     if self.configuration.ignore_duplicates:
@@ -326,7 +366,7 @@ class EntityList(object):
             writer = csv.writer(fp, delimiter=delimiter)
 
             # write header of CSV file
-            column_names = self.configuration.input_parameters + self.configuration.validation_parameters \
+            column_names = self.configuration.input_parameters \
                 + list(self.configuration.output_parameter_mapping.keys())
             writer.writerow(column_names)
 
@@ -336,8 +376,6 @@ class EntityList(object):
                     for column_name in column_names:
                         if column_name in entity.input_parameters.keys():
                             row.append(entity.input_parameters[column_name])
-                        elif column_name in entity.validation_parameters.keys():
-                            row.append(entity.validation_parameters[column_name])
                         elif column_name in entity.output_parameters.keys():
                             row.append(entity.output_parameters[column_name])
                     if len(row) == len(column_names):

@@ -45,7 +45,7 @@ def main():
     args = parser.parse_args()
 
     # parse configuration and create entity list
-    config = EntityConfiguration(args.config_file)
+    config = EntityConfiguration.create_from_json(args.config_file)
     entities = EntityList(config)
 
     # read entities from CSV
