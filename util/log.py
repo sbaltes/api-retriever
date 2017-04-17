@@ -7,10 +7,8 @@ def configure_logger(name, log_file):
     """
     Configure a named global logger.
     (see also [1])
-
-    :param name: name of global logger
-    :param log_file: path to log file for FileHandler
-
+    :param name: Name of global logger.
+    :param log_file: Path to log file for FileHandler.
     [1]: http://stackoverflow.com/a/7622029
     """
 

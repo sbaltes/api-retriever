@@ -11,11 +11,14 @@ class URITemplate(object):
     def __init__(self, uri_template_str):
         self.uri_template_str = uri_template_str
 
+    def equals(self, other_uri_template):
+        return self.uri_template_str == other_uri_template.uri_template_str
+
     def replace_variables(self, variable_values):
         """
         Replace all variables in the URI template with actual values.
-        :param variable_values: a dictionary with values for the variables in the URI template
-        :return: the final URI (string)
+        :param variable_values: A dictionary with values for the variables in the URI template.
+        :return: The final URI string.
         """
 
         uri = self.uri_template_str

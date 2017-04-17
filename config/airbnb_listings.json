@@ -1,8 +1,12 @@
 /* Configuration for Airbnb listings. */
 {
   "name": "airbnb_listings",
-  "input_parameters": ["listing_id"],
-  "validation_parameters": ["host_id"],
+  "input_parameters": ["listing_id", "host_id"],
+  "ignore_duplicates": true,
+  "uri_template": "https://api.airbnb.com/v2/listings/{listing_id}?client_id={api_key}&_format=v1_legacy_show",
+  "api_key": "", // add API key here
+  "delay": [40, 1000],
+  "pre_request_callbacks": [],
   "output_parameter_mapping": {
     "host_id": ["listing", "user_id"],
     "city": ["listing", "city"],
@@ -101,10 +105,6 @@
     "toto_opt_in": ["listing", "toto_opt_in"],
     "wireless_info": ["listing", "wireless_info"]
   },
-  "uri_template": "https://api.airbnb.com/v2/listings/{listing_id}?client_id={api_key}&_format=v1_legacy_show",
-  "pre_request_callbacks": [],
-  "post_request_callbacks": ["extract_parameters"],
-  "api_key": "", // add API key here
-  "ignore_duplicates": true,
-  "delay": [40, 1000]
+  "post_request_callbacks": [],
+  "chained_request": {}
 }

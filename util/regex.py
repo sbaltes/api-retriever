@@ -11,3 +11,5 @@ PLACEHOLDER_REGEX = re.compile(r'^\s*\.+\s*$')
 LINE_COMMENT_REGEX = re.compile(r'(^.*?)(\/\/.*)$')
 MULTILINE_COMMENT_REGEX = re.compile(r'(\/\*.*?\*\/)')
 WHITESPACE_REGEX = re.compile(r'\s+')
+
+FLATTEN_OPERATOR_REGEX = re.compile(r'^(.+)\._$')

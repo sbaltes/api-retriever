@@ -30,6 +30,13 @@ def get_argument_parser():
         dest='config_file'
     )
     arg_parser.add_argument(
+        '-cd', '--config-dir',
+        required=False,
+        default='config',
+        help='Directory with other entity configurations.',
+        dest='config_dir'
+    )
+    arg_parser.add_argument(
         '-d', '--delimiter',
         required=False,
         default=',',
@@ -54,8 +61,14 @@ def main():
     # retrieve data using API
     entities.retrieve_data()
 
-    # write entities to CSV file
-    entities.write_to_csv(args.output_dir, args.delimiter)
+    if config.chained_request_name:
+        # execute chained request (if configured)
+        chained_entities = entities.execute_chained_request(args.config_dir)
+        # write chained entities to CSV file
+        chained_entities.write_to_csv(args.output_dir, args.delimiter)
+    else:
+        # write entities to CSV file
+        entities.write_to_csv(args.output_dir, args.delimiter)
 
 if __name__ == '__main__':
     main()

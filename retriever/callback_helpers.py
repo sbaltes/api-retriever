@@ -5,25 +5,6 @@ from util.regex import IMPORT_STATEMENT_REGEX, PACKAGE_DECLARATION_REGEX, PLACEH
     WHITESPACE_REGEX, MULTILINE_COMMENT_REGEX
 
 
-def get_value_from_nested_dictionary(dictionary, access_path):
-    """
-    Use an access path (e.g., ["user", "first_name"]) to filter a nested dictionary.
-    :param dictionary: the dictionary to filter
-    :param access_path: a list with keys for filtering the nested dictionary
-    :return: the resulting value
-    :raises: KeyError if filtering using access_path is not possible in dictionary
-    """
-
-    # start with whole dictionary
-    result = dictionary
-
-    # loop through access path and filter dictionary accordingly
-    for step in access_path:
-        result = result[step]
-
-    return result
-
-
 def normalize_java(source_code):
     """
     Normalize a string with Java source code.
