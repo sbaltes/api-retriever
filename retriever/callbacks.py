@@ -42,7 +42,7 @@ def validate_code_block_normalization(entity):
 def sort_commits(entity):
     """
     Sort the retrieved commits according to their commit date from old to new.
-    See entity configuration: gh_repo_path_commits
+    See entity configuration: gh_repo_path_codeblock___commits
     :param entity: An entity having "commits" as output parameter.
     :return: None
     """
@@ -62,7 +62,7 @@ def sort_commits(entity):
 def filter_patches_with_code_block(entity):
     """
     Filter entities where the normalized code block matches on of the file diffs (patches). 
-    See entity configuration: gh_repo_commits_files_code_blocks
+    See entity configuration: gh_repo_path_codeblock_commit___files
     :param entity: An entity with output parameter "files" and input parameter "code_block_normalized".
     :return: True if code block matches commit diff, False otherwise.
     """
