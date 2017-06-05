@@ -61,7 +61,7 @@ def sort_commits(entity):
 
 def filter_patches_with_code_block(entity):
     """
-    Filter entities where the normalized code block matches on of the file diffs (patches). 
+    Filter entities where the normalized code block matches one of the file diffs (patches).
     See entity configuration: gh_repo_path_codeblock_commit___files
     :param entity: An entity with output parameter "files" and input parameter "code_block_normalized".
     :return: True if code block matches commit diff, False otherwise.
@@ -79,5 +79,29 @@ def filter_patches_with_code_block(entity):
                     # remove files from output
                     entity.output_parameters.pop('files')
                     return True
+
+    return False
+
+
+def filter_patches_with_line(entity):
+    """
+    Filter entities where the line containing a link to Stack Overflow matches one of the file diffs (patches).
+    See entity configuration: gh_repo_path_line_url_commit___files
+    :param entity: An entity with output parameter "files" and input parameter "line".
+    :return: True if the line is found in the commit diff, False otherwise.
+    """
+    # search for match of line in commit diff
+    for file in entity.output_parameters["files"]:
+        if file["filename"] == entity.input_parameters["path"]:
+            patch = file.get("patch", None)
+            if patch:
+                patch_lines = patch.split('\n')
+                for line in patch_lines:
+                    if line.startswith("+") and line[1:].strip() == entity.input_parameters["line"].strip():
+                        # add commit diff to output
+                        entity.output_parameters["commit_diff"] = patch
+                        # remove files from output
+                        entity.output_parameters.pop('files')
+                        return True
 
     return False

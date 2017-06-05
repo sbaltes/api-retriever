@@ -1,0 +1,25 @@
+/* Retrieve GH commits for a certain path and then retrieve the file diffs with the next request. */
+{
+  "name": "gh_repo_path_codeblock___commits",
+  "input_parameters": ["repo_name", "path", "code_block", "code_block_normalized"],
+  "ignore_duplicates": false,
+  "uri_template": "https://api.github.com/repos/{repo_name}/commits?path={path}&access_token={api_key}",
+  "api_key": "",  // add API key here
+  "delay": [40, 1000],
+  "pre_request_callbacks": ["validate_code_block_normalization"],
+  "output_parameter_mapping": {
+    "commits": ["*", {
+        "commit_sha": ["sha"],
+        "commit_date": ["commit", "author", "date"]
+      }
+    ]
+  },
+  "post_request_callbacks": ["sort_commits"],
+  "chained_request": {
+    "name": "gh_repo_path_codeblock_commit___files",
+    "input_parameters": {
+      "input_parameters": ["repo_name", "path", "code_block", "code_block_normalized"],
+      "output_parameters": ["commits._"]
+    }
+  }
+}
