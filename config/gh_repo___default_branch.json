@@ -1,0 +1,15 @@
+/* Retrieve default branch (usually "master") for a list of repos. */
+{
+  "name": "gh_repo___default_branch",
+  "input_parameters": ["repo_name"],
+  "ignore_duplicates": true,
+  "uri_template": "https://api.github.com/repos/{repo_name}?access_token={api_key}",
+  "api_key": "",  // add API key here
+  "delay": [40, 1000],
+  "pre_request_callbacks": [],
+  "output_parameter_mapping": {
+    "default_branch": ["default_branch"]
+  },
+  "post_request_callbacks": [],
+  "chained_request": {}
+}
