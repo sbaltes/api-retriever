@@ -2,7 +2,7 @@
 {
   "name": "airbnb_host_listing___data",
   "input_parameters": ["listing_id", "host_id"],
-  "ignore_duplicates": true,
+  "ignore_input_duplicates": true,
   "uri_template": "https://api.airbnb.com/v2/listings/{listing_id}?client_id={api_key}&_format=v1_legacy_show",
   "api_key": "", // add API key here
   "delay": [40, 1000],
@@ -105,6 +105,7 @@
     "toto_opt_in": ["listing", "toto_opt_in"],
     "wireless_info": ["listing", "wireless_info"]
   },
+  "apply_output_filter": true,
   "post_request_callbacks": [],
   "chained_request": {}
 }

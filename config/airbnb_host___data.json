@@ -2,7 +2,7 @@
 {
   "name": "airbnb_host___data",
   "input_parameters": ["host_id"],
-  "ignore_duplicates": true,
+  "ignore_input_duplicates": true,
   "uri_template": "https://api.airbnb.com/v2/users/{host_id}?client_id={api_key}&_format=v1_legacy_show",
   "api_key": "", // add API key here
   "delay": [40, 1000],
@@ -30,6 +30,7 @@
     "total_listings_count": ["user", "total_listings_count"],
     "work": ["user", "work"]
   },
+  "apply_output_filter": true,
   "post_request_callbacks": [],
   "chained_request": {}
 }

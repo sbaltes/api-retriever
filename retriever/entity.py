@@ -53,16 +53,26 @@ class EntityConfiguration(object):
             # API key to include in the uri_template
             self.api_key = config_dict["api_key"]
             # configure if duplicate values in the input files should be ignored.
-            self.ignore_duplicates = config_dict["ignore_duplicates"]
+            self.ignore_input_duplicates = config_dict["ignore_input_duplicates"]
             # configure the randomized delay interval (ms) between two API requests (trying to prevent getting blocked)
             self.delay_min = config_dict["delay"][0]
             self.delay_max = config_dict["delay"][1]
             # dictionary with mapping of parameter names to values in the response
             self.output_parameter_mapping = config_dict["output_parameter_mapping"]
+            # check if raw download is configured
+            self.raw_download = False
+            self.raw_parameter = None
+            for parameter in self.output_parameter_mapping.keys():
+                if len(self.output_parameter_mapping[parameter]) == 1\
+                        and self.output_parameter_mapping[parameter][0] == "<raw_response>":
+                    self.raw_download = True
+                    self.raw_parameter = parameter
             # load pre_request_callbacks to validate and/or process the parameters before the request to the API is made
             self.pre_request_callbacks = []
             for callback_name in config_dict["pre_request_callbacks"]:
                 self.pre_request_callbacks.append(EntityConfiguration._load_callback(callback_name))
+            # configure if filters should be applied when retrieving data
+            self.apply_output_filter = config_dict["apply_output_filter"]
             # load post_request_callbacks to process, validate and/or filter output parameters from a JSON API response
             self.post_request_callbacks = []
             for callback_name in config_dict["post_request_callbacks"]:
@@ -110,7 +120,7 @@ class EntityConfiguration(object):
             return False
         if not self.api_key == other_config.api_key:
             return False
-        if not self.ignore_duplicates == other_config.ignore_duplicates:
+        if not self.ignore_input_duplicates == other_config.ignore_input_duplicates:
             return False
         if not self.delay_min == other_config.delay_min:
             return False
@@ -130,6 +140,9 @@ class EntityConfiguration(object):
         for callback in self.pre_request_callbacks:
             if callback not in other_config.pre_request_callbacks:
                 return False
+
+        if not self.apply_output_filter == other_config.apply_output_filter:
+            return False
 
         for callback in self.post_request_callbacks:
             if callback not in other_config.post_request_callbacks:
@@ -253,11 +266,15 @@ class Entity(object):
             if response.ok:
                 logger.info("Successfully retrieved data for entity " + str(self) + ".")
 
-                # deserialize JSON string
-                json_response = json.loads(response.text)
-
-                # extract parameters according to parameter mapping
-                self._extract_output_parameters(json_response)
+                if self.configuration.raw_download:
+                    # raw download
+                    self.output_parameters[self.configuration.raw_parameter] = response.content
+                else:
+                    # JSON API call
+                    # deserialize JSON string
+                    json_response = json.loads(response.text)
+                    # extract parameters according to parameter mapping
+                    self._extract_output_parameters(json_response)
 
                 # execute post_request_callbacks
                 for callback in self.configuration.post_request_callbacks:
@@ -268,7 +285,7 @@ class Entity(object):
                             logger.info("Entity removed because of filter callback " + str(callback) + ": " + str(self))
                             return False
 
-                return True
+                    return True
 
             else:
                 logger.error("Error " + str(response.status_code) + ": Could not retrieve data for entity " + str(self)
@@ -517,8 +534,8 @@ class EntityList(object):
                     # create entity from values in row
                     new_entity = Entity(self.configuration, input_parameter_values)
 
-                    # if ignore_duplicates is configured, check if entity already exists
-                    if self.configuration.ignore_duplicates:
+                    # if ignore_input_duplicates is configured, check if entity already exists
+                    if self.configuration.ignore_input_duplicates:
                         entity_exists = False
                         for entity in self.list:
                             if entity.equals(new_entity):
@@ -526,7 +543,7 @@ class EntityList(object):
                         if not entity_exists:
                             # add new entity to list
                             self.list.append(new_entity)
-                    else:  # ignore_duplicates is false
+                    else:  # ignore_input_duplicates is false
                         # add new entity to list
                         self.list.append(new_entity)
                 else:
@@ -540,7 +557,13 @@ class EntityList(object):
         """
         # retrieve data and filter list according to the return value of entity.retrieve_data
         # (may be false, e.g., because of filter callback)
-        self.list = [entity for entity in self.list if entity.retrieve_data(self.session)]
+
+        if self.configuration.apply_output_filter:
+            self.list = [entity for entity in self.list if entity.retrieve_data(self.session)]
+        else:
+            for entity in self.list:
+                entity.retrieve_data(self.session)
+
         logger.info("Data for " + str(len(self.list)) + " entities has been saved.")
 
     def execute_chained_request(self, config_dir):

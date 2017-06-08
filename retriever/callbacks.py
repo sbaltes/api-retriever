@@ -105,3 +105,10 @@ def filter_patches_with_line(entity):
                         return True
 
     return False
+
+
+def save_content(entity):
+    pass
+    # replace "/" with " " in path and save file
+    # remove files from output
+    entity.output_parameters.pop(entity.configuration.raw_parameter)

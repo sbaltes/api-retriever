@@ -2,7 +2,7 @@
 {
   "name": "gh_repo_path_line_url_commit___files",
   "input_parameters": ["id", "url", "line", "repo_name", "path", "commit_sha", "commit_date"],
-  "ignore_duplicates": false,
+  "ignore_input_duplicates": false,
   "uri_template": "https://api.github.com/repos/{repo_name}/commits/{commit_sha}?access_token={api_key}",
   "api_key": "", // add API key here
   "delay": [40, 1000],
@@ -13,6 +13,7 @@
         "patch": ["patch"]
       }]
   },
+  "apply_output_filter": true,
   "post_request_callbacks": ["filter_patches_with_line"], // this callback also changes the output parameters
   "chained_request": {}
 }
