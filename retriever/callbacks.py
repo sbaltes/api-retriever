@@ -1,6 +1,7 @@
 """ Callbacks that are executed before or after retrieving API data. """
 
 import logging
+import os
 
 from dateutil import parser
 from retriever.callback_helpers import normalize_java, get_added_lines
@@ -107,8 +108,16 @@ def filter_patches_with_line(entity):
     return False
 
 
-def save_content(entity):
-    pass
-    # replace "/" with " " in path and save file
-    # remove files from output
-    entity.output_parameters.pop(entity.configuration.raw_parameter)
+def set_destination_path(entity):
+    """
+    Add destination path for raw content to output parameters of an entity.
+    See entity configuration: gh_repo_path_default_branch___file
+    :param entity:
+    """
+    if entity.output_parameters[entity.configuration.raw_parameter] is not None:
+        repo_name = entity.input_parameters["repo_name"].split("/")
+        user = repo_name[0]
+        repo = repo_name[1]
+        path = entity.input_parameters["path"].replace("/", " ")
+        # add destination path to output
+        entity.output_parameters["dest_path"] = os.path.join(user, repo, path)

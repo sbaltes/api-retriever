@@ -601,6 +601,7 @@ class EntityList(object):
 
         if len(self.list) == 0:
             logger.info("Nothing to export.")
+            return
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -681,3 +682,48 @@ class EntityList(object):
                     logger.error("Encoding error while writing data for entity: " + str(entity))
 
             logger.info(str(len(self.list)) + ' entities have been exported.')
+
+    def save_raw_files(self, output_dir):
+        """
+        Export raw content from entities to files.
+        :param output_dir: Target directory for exported files.
+        """
+
+        if len(self.list) == 0:
+            logger.info("Nothing to export.")
+            return
+
+        output_dir = os.path.join(output_dir, self.configuration.name)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        logger.info('Exporting raw content of entities to directory ' + str(output_dir) + '...')
+        for entity in self.list:
+            if not entity.configuration.raw_download:
+                raise IllegalConfigurationError("Raw download not configured for entity " + str(entity))
+
+            if entity.output_parameters[entity.configuration.raw_parameter] is not None:
+                if "dest_path" not in entity.output_parameters.keys() or not entity.output_parameters["dest_path"]:
+                    raise IllegalConfigurationError("Destination path not configured for entity " + str(entity))
+
+                # join path to target file, create missing directories
+                dest_file = os.path.join(output_dir, entity.output_parameters["dest_path"])
+                dest_dir = os.path.dirname(dest_file)
+                if not os.path.exists(dest_dir):
+                    os.makedirs(dest_dir)
+
+                logger.info("Writing " + str(dest_file) + "...")
+                # see http://stackoverflow.com/a/13137873
+                with open(dest_file, 'wb') as f:
+                    f.write(entity.output_parameters[entity.configuration.raw_parameter])
+
+                # add downloaded flag to output
+                entity.output_parameters["downloaded"] = True
+            else:
+                # add downloaded flag to output
+                entity.output_parameters["downloaded"] = False
+
+            # remove raw content parameter from output
+            entity.output_parameters.pop(entity.configuration.raw_parameter)
+
+        logger.info("Raw content of " + str(len(self.list)) + ' entities has been exported.')

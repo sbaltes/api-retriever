@@ -11,6 +11,6 @@
     "content": ["<raw_response>"]
   },
   "apply_output_filter": false,
-  "post_request_callbacks": ["save_content"],
+  "post_request_callbacks": ["set_destination_path"],
   "chained_request": {}
 }

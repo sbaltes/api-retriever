@@ -67,6 +67,10 @@ def main():
         # write chained entities to CSV file
         chained_entities.write_to_csv(args.output_dir, args.delimiter)
     else:
+        if config.raw_download:
+            # write raw content to output files
+            entities.save_raw_files(args.output_dir)
+
         # write entities to CSV file
         entities.write_to_csv(args.output_dir, args.delimiter)
 
