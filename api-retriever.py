@@ -9,7 +9,7 @@ logger = logging.getLogger('airbnb_logger')
 
 def get_argument_parser():
     arg_parser = argparse.ArgumentParser(
-        description='Retrieve data about entities using an API,'
+        description='Retrieve data about entities using a public API,'
     )
     arg_parser.add_argument(
         '-i', '--input-file',
@@ -43,6 +43,22 @@ def get_argument_parser():
         help='delimiter in csv files (default: \',\')',
         dest='delimiter'
     )
+    arg_parser.add_argument(
+        '-si', '--start-index',
+        type=int,
+        required=False,
+        default=0,
+        help='start index in input list (default: 0)',
+        dest='start_index'
+    )
+    arg_parser.add_argument(
+        '-cs', '--chunk-size',
+        type=int,
+        required=False,
+        default=0,
+        help='chunk size for this call (default: 0, meaning max.)',
+        dest='chunk_size'
+    )
     return arg_parser
 
 
@@ -53,7 +69,7 @@ def main():
 
     # parse configuration and create entity list
     config = EntityConfiguration.create_from_json(args.config_file)
-    entities = EntityList(config)
+    entities = EntityList(config, args.start_index, args.chunk_size)
 
     # read entities from CSV
     entities.read_from_csv(args.input_file, args.delimiter)

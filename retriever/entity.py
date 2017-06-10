@@ -52,6 +52,11 @@ class EntityConfiguration(object):
             self.uri_template = URITemplate(config_dict["uri_template"])
             # API key to include in the uri_template
             self.api_key = config_dict["api_key"]
+            # check if api key configured when required for uri_template
+            uri_vars = self.uri_template.get_variables()
+            for var in uri_vars:
+                if var == "api_key" and not self.api_key:
+                    raise IllegalConfigurationError("API key required for URI template, but not configured.")
             # configure if duplicate values in the input files should be ignored.
             self.ignore_input_duplicates = config_dict["ignore_input_duplicates"]
             # configure the randomized delay interval (ms) between two API requests (trying to prevent getting blocked)
@@ -466,16 +471,24 @@ class Entity(object):
 class EntityList(object):
     """ List of API entities. """
 
-    def __init__(self, configuration):
+    def __init__(self, configuration, start_index=0, chunk_size=0):
         """
         To initialize the list, an entity configuration is needed.
         :param configuration: Object of class EntityConfiguration.
         """
+
+        assert start_index >= 0
+        assert chunk_size >= 0
+
         self.configuration = configuration
         # list that stores entity objects
         self.list = []
         # session for data retrieval
         self.session = requests.Session()
+        # index of first element to import from input_file (default: 0)
+        self.start_index = start_index
+        # number of elements to import from input_file (default: 0, meaning max.)
+        self.chunk_size = chunk_size
 
     def add(self, entities):
         if isinstance(entities, Entity):
@@ -494,7 +507,12 @@ class EntityList(object):
 
         # read CSV as UTF-8 encoded file (see also http://stackoverflow.com/a/844443)
         with codecs.open(input_file, encoding='utf8') as fp:
-            logger.info("Reading entities from " + input_file + "...")
+            if self.chunk_size == 0:
+                interval = "[" + str(self.start_index) + ", max]"
+            else:
+                interval = "[" + str(self.start_index) + ", " + str(self.start_index+self.chunk_size-1) + "]"
+            logger.info("Reading entities in " + interval + " from " + input_file + "...")
+
             reader = csv.reader(fp, delimiter=delimiter)
 
             # dictionary to store CSV column indices for input parameters
@@ -517,7 +535,16 @@ class EntityList(object):
                     raise IllegalArgumentError("Unknown column name in CSV file: " + header[index])
 
             # read CSV file
+            current_index = 0
             for row in reader:
+                # only read value from start_index to start_index+chunk_size-1 (if chunk_size is 0, read until the end)
+                if current_index < self.start_index:
+                    current_index += 1
+                    continue
+                elif (self.chunk_size != 0) and (current_index >= self.start_index+self.chunk_size):
+                    current_index += 1
+                    break
+
                 if row:
                     # dictionary to store imported parameter values
                     input_parameter_values = OrderedDict.fromkeys(self.configuration.input_parameters)
@@ -548,6 +575,8 @@ class EntityList(object):
                         self.list.append(new_entity)
                 else:
                     raise IllegalArgumentError("Wrong CSV format.")
+
+                current_index += 1
 
         logger.info(str(len(self.list)) + " entities have been imported.")
 
@@ -584,7 +613,7 @@ class EntityList(object):
 
         if chained_request_config.name == self.configuration.chained_request_name:
             logger.info("Executing chained requests...")
-            chained_request_entities = EntityList(chained_request_config)
+            chained_request_entities = EntityList(chained_request_config, self.start_index, self.chunk_size)
             for entity in self.list:
                 chained_request_entities.add(entity.execute_chained_request(chained_request_config))
             return chained_request_entities
@@ -606,10 +635,13 @@ class EntityList(object):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        file_path = os.path.join(
-            output_dir,
-            '{0}.csv'.format(self.configuration.name)
-        )
+        if self.chunk_size != 0:
+            filename = '{0}_{1}-{2}.csv'.format(self.configuration.name, str(self.start_index),
+                                                str(self.start_index + min(len(self.list), self.chunk_size) - 1))
+        else:
+            filename = '{0}.csv'.format(self.configuration.name)
+
+        file_path = os.path.join(output_dir, filename)
 
         # write entity list to UTF8-encoded CSV file (see also http://stackoverflow.com/a/844443)
         with codecs.open(file_path, 'w', encoding='utf8') as fp:
