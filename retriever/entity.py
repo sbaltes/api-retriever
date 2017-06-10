@@ -613,7 +613,7 @@ class EntityList(object):
 
         if chained_request_config.name == self.configuration.chained_request_name:
             logger.info("Executing chained requests...")
-            chained_request_entities = EntityList(chained_request_config, self.start_index, self.chunk_size)
+            chained_request_entities = EntityList(chained_request_config)
             for entity in self.list:
                 chained_request_entities.add(entity.execute_chained_request(chained_request_config))
             return chained_request_entities
