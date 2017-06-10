@@ -121,3 +121,24 @@ def set_destination_path(entity):
         path = entity.input_parameters["path"].replace("/", " ")
         # add destination path to output
         entity.output_parameters["dest_path"] = os.path.join(user, repo, path)
+
+
+def extract_email_from_commits(entity):
+    """
+    Extract email from commit data, add to output, remove commits.
+    See entity configuration: gh_user_repo___commit_email
+    :param entity: An entity having "commits" with "author_email" as output parameter.
+    :return: True if email address has been extracted, False otherwise.
+    """
+    if entity.output_parameters["commits"]:
+        for commit in entity.output_parameters["commits"]:
+            author_email = commit["author_email"]
+            if author_email and "@" in author_email:
+                entity.output_parameters["author_email"] = author_email
+                break
+
+        entity.output_parameters.pop('commits')
+        if "author_email" in entity.output_parameters.keys():
+            return True
+
+    return False

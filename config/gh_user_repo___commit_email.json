@@ -1,0 +1,19 @@
+/* Get email address of a user from his/her commits in a repo. */
+{
+  "name": "gh_user_repo___commit_email",
+  "input_parameters": ["user_name", "repo_name"],
+  "ignore_input_duplicates": true,
+  "uri_template": "https://api.github.com/repos/{repo_name}/commits?access_token={api_key}&author={user_name}",
+  "api_key": "",  // add API key here
+  "delay": [40, 1000],
+  "pre_request_callbacks": [],
+  "output_parameter_mapping": {
+    "commits": ["*", {
+        "author_email": ["commit", "author", "email"]
+      }
+    ]
+  },
+  "apply_output_filter": true,
+  "post_request_callbacks": ["extract_email_from_commits"], // adds author_email to output, removes commits
+  "chained_request": {}
+}
