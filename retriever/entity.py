@@ -312,11 +312,11 @@ class Entity(object):
         # extract data for all parameters according to access path defined in the entity configuration
         for parameter in self.configuration.output_parameter_mapping.keys():
             parameter_filter = self.configuration.output_parameter_mapping[parameter]
-            filter_result = Entity._apply_filter(json_response, parameter_filter)
+            filter_result = Entity.apply_filter(json_response, parameter_filter)
             self.output_parameters[parameter] = filter_result
 
     @staticmethod
-    def _apply_filter(json_response, parameter_filter):
+    def apply_filter(json_response, parameter_filter):
         """
         Use an access path (e.g., ["user", "first_name"]) to filter a nested dictionary.
         :param json_response: The JSON response to filter.
@@ -346,7 +346,7 @@ class Entity(object):
                                 filtered_element = OrderedDict.fromkeys(list_element_filter.keys())
                                 for parameter in filtered_element.keys():
                                     filtered_element[parameter] = \
-                                        Entity._apply_filter(element, list_element_filter[parameter])
+                                        Entity.apply_filter(element, list_element_filter[parameter])
                                 extracted_list.append(filtered_element)
                         else:
                             raise IllegalArgumentError("The list matching operator must be succeeded by a filter "
@@ -364,8 +364,13 @@ class Entity(object):
                 # normal filter path
                 if not isinstance(current_filter, list) and not isinstance(current_filter, dict):
                     try:
-                        # use current string as dictionary key to filter the response
-                        filtered_response = filtered_response[current_filter]
+                        # filter may be an index for a list
+                        if isinstance(filtered_response, list) and Entity.parsable_as_int(current_filter):
+                            index = int(current_filter)
+                            filtered_response = filtered_response[index]
+                        else:
+                            # use current string as dictionary key to filter the response
+                            filtered_response = filtered_response[current_filter]
                     except KeyError:
                         logger.error("Could not apply filter <" + str(current_filter) + "> to response "
                                      + str(filtered_response) + ".")
@@ -375,6 +380,14 @@ class Entity(object):
                                                "operator (optionally followed by a filter object).")
 
         return filtered_response
+
+    @staticmethod
+    def parsable_as_int(s):
+        try:
+            int(s)
+            return True
+        except ValueError:
+            return False
 
     def execute_chained_request(self, chained_request_config):
         """
@@ -515,6 +528,51 @@ class EntityList(object):
 
             reader = csv.reader(fp, delimiter=delimiter)
 
+            # check if one of the input parameters is an URI
+            uri_input_parameters = OrderedDict()
+            for parameter in self.configuration.input_parameters:
+                if isinstance(parameter, list):
+                    if not len(parameter) == 3 and parameter[1].startswith("http"):
+                        raise IllegalConfigurationError("Malformed URI input parameter, should be" +
+                                                        "[parameter, uri, response_filter].")
+
+                    uri_parameter = parameter[0]
+                    uri = parameter[1]
+                    response_filter = parameter[2]
+                    logger.info("Found URI input parameter: " + str(uri_parameter))
+
+                    logger.info("Retrieving data for URI input parameter " + str(uri_parameter) + "...")
+
+                    try:
+                        # retrieve data
+                        response = self.session.get(uri)
+
+                        if response.ok:
+                            logger.info("Successfully retrieved data for URI input parameter " + str(uri_parameter) + ".")
+
+                            # deserialize JSON string
+                            json_response = json.loads(response.text)
+
+                            filter_result = Entity.apply_filter(json_response, response_filter)
+                            uri_input_parameters[uri_parameter] = filter_result
+
+                        else:
+                            raise IllegalConfigurationError("Error " + str(response.status_code)
+                                                            + ": Could not retrieve data for URI input parameter "
+                                                            + str(uri_parameter) + ". Response: "
+                                                            + str(response.content))
+
+                    except (gaierror,
+                            ConnectionError,
+                            MaxRetryError,
+                            NewConnectionError):
+                        logger.error("An error occurred while retrieving data for URI input parameter "
+                                     + str(uri_parameter) + ".")
+
+                    # replace URI parameter with URI parameter name
+                    self.configuration.input_parameters.remove(parameter)
+                    self.configuration.input_parameters.append(uri_parameter)
+
             # dictionary to store CSV column indices for input parameters
             input_parameter_indices = OrderedDict.fromkeys(self.configuration.input_parameters)
 
@@ -523,8 +581,8 @@ class EntityList(object):
             if not header:
                 raise IllegalArgumentError("Missing header in CSV file.")
 
-            # number of columns must equal number of input parameters
-            if not len(header) == len(input_parameter_indices):
+            # number of columns must equal number of input parameters minus number of uri input parameters
+            if not len(header) == len(input_parameter_indices) - len(uri_input_parameters):
                 raise IllegalArgumentError("Wrong number of columns in CSV file.")
 
             # check if columns and parameters match, store indices
@@ -551,8 +609,12 @@ class EntityList(object):
 
                     # read parameters
                     for parameter in input_parameter_values.keys():
-                        parameter_index = input_parameter_indices[parameter]
-                        value = row[parameter_index]
+                        # if parameter was URI input parameter, get value from dict
+                        if parameter in uri_input_parameters.keys():
+                            value = uri_input_parameters[parameter]
+                        else:  # get value from CSV
+                            parameter_index = input_parameter_indices[parameter]
+                            value = row[parameter_index]
                         if value:
                             input_parameter_values[parameter] = value
                         else:

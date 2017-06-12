@@ -1,0 +1,36 @@
+/* Get data about SO answers. */
+{
+  "name": "so_answer___data",
+  "input_parameters": ["id", ["filter",
+      "https://api.stackexchange.com/2.2/filters/create?include=answer.comment_count;answer.down_vote_count;answer.last_editor;answer.link;answer.share_link;answer.tags;answer.title;answer.up_vote_count;question.comment_count;question.down_vote_count;question.favorite_count;question.last_editor;question.share_link;question.up_vote_count&exclude=answer.community_owned_date;question.bounty_amount;question.bounty_closes_date;question.community_owned_date;question.migrated_from;question.migrated_to&unsafe=false>",
+      ["items", "0", "filter"]
+    ]
+  ],
+  "ignore_input_duplicates": true,
+  "uri_template": "https://api.stackexchange.com/2.2/answers/{id}?key={api_key}&site=stackoverflow&filter={filter}",
+  "api_key": "",  // add API key here
+  "delay": [40, 1000],
+  "pre_request_callbacks": [],
+  "output_parameter_mapping": {
+    "is_accepted": ["items", "0", "is_accepted"],
+    "answer_id": ["items", "0", "answer_id"],
+    "score": ["items", "0", "score"],
+    "share_link": ["items", "0", "share_link"],
+    "comment_count": ["items", "0", "comment_count"],
+    "up_vote_count": ["items", "0", "up_vote_count"],
+    "down_vote_count": ["items", "0", "down_vote_count"],
+    "owner_id": ["items", "0", "owner", "user_id"],
+    "owner_name": ["items", "0", "owner", "display_name"],
+    "owner_reputation": ["items", "0", "owner", "reputation"],
+    "last_editor_id": ["items", "0", "last_editor", "user_id"],
+    "last_editor_name": ["items", "0", "last_editor", "display_name"],
+    "last_editor_reputation": ["items", "0", "last_editor", "reputation"],
+    "creation_date": ["items", "0", "creation_date"],
+    "last_edit_date": ["items", "0", "last_edit_date"],
+    "last_activity_date": ["items", "0", "last_activity_date"],
+    "question_id": ["items", "0", "question_id"]
+  },
+  "apply_output_filter": false,
+  "post_request_callbacks": [],
+  "chained_request": {} // TODO: get question data
+}

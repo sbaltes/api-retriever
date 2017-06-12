@@ -15,7 +15,6 @@ logger = logging.getLogger('api-retriever_logger')
 # pre_request_callbacks #
 #########################
 
-# Entity configuration:
 def validate_code_block_normalization(entity):
     """
     Validate if normalize_java produces the same normalized string as imported from the CSV file.
