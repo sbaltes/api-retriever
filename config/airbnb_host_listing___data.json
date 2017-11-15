@@ -4,6 +4,7 @@
   "input_parameters": ["listing_id", "host_id"],
   "ignore_input_duplicates": true,
   "uri_template": "https://api.airbnb.com/v2/listings/{listing_id}?client_id={api_key}&_format=v1_legacy_show",
+  "headers": {},
   "api_key": "", // add API key here
   "delay": [40, 1000],
   "pre_request_callbacks": [],

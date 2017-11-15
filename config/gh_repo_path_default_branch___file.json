@@ -4,6 +4,7 @@
   "input_parameters": ["repo_name", "path", "default_branch"],
   "ignore_input_duplicates": true,
   "uri_template": "https://raw.githubusercontent.com/{repo_name}/{default_branch}/{path}",
+  "headers": {},
   "api_key": "",  // API key not needed
   "delay": [40, 1000],
   "pre_request_callbacks": [],

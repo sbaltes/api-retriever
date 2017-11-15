@@ -8,6 +8,7 @@
   ],
   "ignore_input_duplicates": true,
   "uri_template": "https://api.stackexchange.com/2.2/answers/{id}?key={api_key}&site=stackoverflow&filter={filter}",
+  "headers": {},
   "api_key": "",  // add API key here
   "delay": [40, 1000],
   "pre_request_callbacks": [],
