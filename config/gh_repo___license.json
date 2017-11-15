@@ -8,7 +8,7 @@
     "Accept": "application/vnd.github.drax-preview+json"  // API preview period, see https://developer.github.com/v3/licenses/
   },
   "api_key": "",  // add API key here
-  "delay": [40, 1000],
+  "delay": [100, 2000],
   "pre_request_callbacks": [],
   "output_parameter_mapping": {
     "license": ["license", "key"]
