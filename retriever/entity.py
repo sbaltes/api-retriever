@@ -50,6 +50,8 @@ class EntityConfiguration(object):
             self.input_parameters = config_dict["input_parameters"]
             # uri templates to retrieve information about the entity (may include API key)
             self.uri_template = URITemplate(config_dict["uri_template"])
+            # the user may specify custom headers for the HTTP request
+            self.headers = config_dict["headers"]
             # API key to include in the uri_template
             self.api_key = config_dict["api_key"]
             # check if api key configured when required for uri_template
@@ -131,6 +133,10 @@ class EntityConfiguration(object):
             return False
         if not self.delay_max == other_config.delay_max:
             return False
+
+        for header in self.headers:
+            if header not in other_config.headers:
+                return False
 
         for parameter in self.input_parameters:
             if parameter not in other_config.input_parameters:
@@ -266,7 +272,10 @@ class Entity(object):
             time.sleep(delay / 1000)  # sleep for delay ms to prevent getting blocked
 
             # retrieve data
-            response = session.get(self.uri)
+            if len(self.configuration.headers) > 0:
+                response = session.get(self.uri, headers=self.configuration.headers)
+            else:
+                response = session.get(self.uri)
 
             if response.ok:
                 logger.info("Successfully retrieved data for entity " + str(self) + ".")
@@ -370,7 +379,11 @@ class Entity(object):
                             filtered_response = filtered_response[index]
                         else:
                             # use current string as dictionary key to filter the response
-                            filtered_response = filtered_response[current_filter]
+                            if filtered_response[current_filter] is None:
+                                logger.info("Result for filter " + current_filter + " was None.")
+                                return "None"
+                            else:
+                                filtered_response = filtered_response[current_filter]
                     except KeyError:
                         logger.error("Could not apply filter <" + str(current_filter) + "> to response "
                                      + str(filtered_response) + ".")

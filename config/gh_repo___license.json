@@ -1,0 +1,19 @@
+/* Retrieve default branch (usually "master") for a list of repos. */
+{
+  "name": "gh_repo___license",
+  "input_parameters": ["repo_name"],
+  "ignore_input_duplicates": true,
+  "uri_template": "https://api.github.com/repos/{repo_name}?access_token={api_key}",
+  "headers": {
+    "Accept": "application/vnd.github.drax-preview+json"  // API preview period, see https://developer.github.com/v3/licenses/
+  },
+  "api_key": "",  // add API key here
+  "delay": [40, 1000],
+  "pre_request_callbacks": [],
+  "output_parameter_mapping": {
+    "license": ["license", "key"]
+  },
+  "apply_output_filter": false,
+  "post_request_callbacks": [],
+  "chained_request": {}
+}
