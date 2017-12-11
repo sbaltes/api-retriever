@@ -202,6 +202,8 @@ class Entity(object):
     Class representing one API entity for which information should be retrieved over an API.
     """
 
+    # TODO: Add support for pagination (see https://developer.github.com/v3/guides/traversing-with-pagination/)
+
     def __init__(self, configuration, input_parameter_values):
         """
         To initialize an entity, a corresponding entity configuration together
