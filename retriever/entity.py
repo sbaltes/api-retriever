@@ -8,7 +8,6 @@ from requests.packages.urllib3.exceptions import MaxRetryError
 from requests.packages.urllib3.exceptions import NewConnectionError
 from collections import OrderedDict
 
-from retriever.entity_list import EntityList
 from util.exceptions import IllegalArgumentError, IllegalConfigurationError
 from util.regex import FLATTEN_OPERATOR_REGEX
 
@@ -224,7 +223,7 @@ class Entity(object):
         except ValueError:
             return False
 
-    def execute_chained_request(self, chained_request_config):
+    def get_chained_request_entities(self, chained_request_config):
         """
         Execute a chained request after retrieving the data for this entity.
         :param chained_request_config: The configuration to use for the chained request.
@@ -274,7 +273,7 @@ class Entity(object):
                             raise IllegalConfigurationError(
                                 "Input parameter for chained request not found: " + str(parameter))
 
-                chained_request_entities = EntityList(chained_request_config)
+                chained_request_entities = list()
 
                 if len(flatten_parameters_chained_request) > 0:  # flatten parameters defined
                     # we only support one flatten operator in the input parameter mapping for the chained request
@@ -298,10 +297,10 @@ class Entity(object):
                                 for inner_parameter in inner_parameters:
                                     flattened_input_parameters_chained_request[inner_parameter] = \
                                         list_element[inner_parameter]
-                                chained_request_entities.add(Entity(chained_request_config, flattened_input_parameters_chained_request))
+                                chained_request_entities.append(Entity(chained_request_config, flattened_input_parameters_chained_request))
 
                 else:  # no flatten parameters defined
-                    chained_request_entities.add(Entity(chained_request_config, input_parameters_chained_request))
+                    chained_request_entities.append(Entity(chained_request_config, input_parameters_chained_request))
 
             except KeyError as e:
                 raise IllegalConfigurationError("Reading chained request from configuration failed: Parameter "
@@ -310,8 +309,5 @@ class Entity(object):
             raise IllegalArgumentError("Configuration <" + str(chained_request_config.name) + "> provided, but <"
                                        + str(self.configuration.chained_request_name) + "> needed for chained request.")
 
-        # retrieve data for chained entities
-        chained_request_entities.retrieve_data()
-        # return chained entities
         return chained_request_entities
 

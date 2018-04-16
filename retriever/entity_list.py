@@ -42,12 +42,19 @@ class EntityList(object):
         self.chunk_size = chunk_size
 
     def add(self, entities):
+        error_message = "Argument must be object of class Entity or class EntityList."
+
         if isinstance(entities, Entity):
             self.list.append(entities)
         elif isinstance(entities, EntityList):
             self.list = self.list + entities.list
+        elif isinstance(entities, list):
+            for element in entities:
+                if not isinstance(element, Entity):
+                    raise IllegalArgumentError(error_message)
+                self.list.append(element)
         else:
-            raise IllegalArgumentError("Argument must be object of class Entity or class EntityList.")
+            raise IllegalArgumentError(error_message)
 
     def read_from_csv(self, input_file, delimiter):
         """
@@ -213,10 +220,16 @@ class EntityList(object):
 
         if chained_request_config.name == self.configuration.chained_request_name:
             logger.info("Executing chained requests...")
+
             chained_request_entities = EntityList(chained_request_config)
             for entity in self.list:
-                chained_request_entities.add(entity.execute_chained_request(chained_request_config))
+                # get chained request entities
+                chained_request_entities.add(entity.get_chained_request_entities(chained_request_config))
+                # retrieve data for chained entities
+                chained_request_entities.retrieve_data()
+
             return chained_request_entities
+
         raise IllegalConfigurationError("Configuration name <" + str(chained_request_config.name)
                                         + "> is not identical to chained request name <"
                                         + str(self.configuration.chained_request_name) + ">.")

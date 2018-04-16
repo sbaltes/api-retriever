@@ -2,6 +2,8 @@ import json
 import logging
 
 from inspect import signature
+
+import os
 from jsmin import jsmin
 
 from retriever import callbacks
@@ -22,7 +24,7 @@ class EntityConfiguration(object):
         * optionally a chained request
     """
 
-    def __init__(self, config_dict):
+    def __init__(self, name, config_dict):
         """
         Initialize an API entity configuration.
         :param config_dict: A dictionary with all configuration parameters.
@@ -30,7 +32,7 @@ class EntityConfiguration(object):
 
         try:
             # name of configured entity
-            self.name = config_dict["name"]
+            self.name = name
             # list with parameters that identify the entity or that should be validated
             # (correspond to columns in the input CSV)
             self.input_parameters = config_dict["input_parameters"]
@@ -181,7 +183,8 @@ class EntityConfiguration(object):
             # parse JSON file
             config_dict = json.loads(stripped_json)
 
-        entity_config = EntityConfiguration(config_dict)
-        logger.info("Entity configuration successfully imported: " + str(entity_config.name))
+        name = os.path.basename(json_config_file).split(".")[0]
+        entity_config = EntityConfiguration(name, config_dict)
+        logger.info("Entity configuration successfully imported: " + str(name))
 
         return entity_config
