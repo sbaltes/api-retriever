@@ -52,12 +52,12 @@ class EntityConfiguration(object):
             self.uri_template = URITemplate(config_dict["uri_template"])
             # the user may specify custom headers for the HTTP request
             self.headers = config_dict["headers"]
-            # API key to include in the uri_template
-            self.api_key = config_dict["api_key"]
+            # API keys to include in the uri_template
+            self.api_keys = config_dict["api_keys"]
             # check if api key configured when required for uri_template
             uri_vars = self.uri_template.get_variables()
             for var in uri_vars:
-                if var == "api_key" and not self.api_key:
+                if var.startswith("api_key") and not self.api_keys:
                     raise IllegalConfigurationError("API key required for URI template, but not configured.")
             # configure if duplicate values in the input files should be ignored.
             self.ignore_input_duplicates = config_dict["ignore_input_duplicates"]
@@ -84,7 +84,9 @@ class EntityConfiguration(object):
             self.post_request_callbacks = []
             for callback_name in config_dict["post_request_callbacks"]:
                 self.post_request_callbacks.append(EntityConfiguration._load_callback(callback_name))
-            # save (optional) chained request
+            # optionally, dicts in the results can be flattened
+            self.flatten_output = config_dict["flatten_output"]
+            #  save (optional) chained request
             self.chained_request_name = None
             self.chained_request_input_parameter_mapping = None
             chained_request = config_dict["chained_request"]
@@ -125,14 +127,16 @@ class EntityConfiguration(object):
             return False
         if not self.uri_template.equals(other_config.uri_template):
             return False
-        if not self.api_key == other_config.api_key:
-            return False
         if not self.ignore_input_duplicates == other_config.ignore_input_duplicates:
             return False
         if not self.delay_min == other_config.delay_min:
             return False
         if not self.delay_max == other_config.delay_max:
             return False
+
+        for api_key in self.api_keys:
+            if api_key not in other_config.api_keys:
+                return False
 
         for header in self.headers:
             if header not in other_config.headers:
@@ -228,9 +232,12 @@ class Entity(object):
 
         # get uri for this entity from uri template in the configuration
         uri_variable_values = {
-            **self.input_parameters,
-            "api_key": self.configuration.api_key
+            **self.input_parameters
         }
+
+        for i in range(0, len(self.configuration.api_keys)):
+            uri_variable_values["api_key_" + str(i+1)] = self.configuration.api_keys[i]
+
         self.uri = self.configuration.uri_template.replace_variables(uri_variable_values)
 
     def equals(self, other_entity):
@@ -836,3 +843,52 @@ class EntityList(object):
             entity.output_parameters.pop(entity.configuration.raw_parameter)
 
         logger.info("Raw content of " + str(len(self.list)) + ' entities has been exported.')
+
+    def flatten_output(self):
+        """
+        Flattens the entries of output parameters that is a list of dicts,
+        i.e. converts them to separate columns.
+        """
+        logger.info("Flattening output...")
+
+        # search for list parameter
+        list_parameter_name = None
+        other_parameters = list()
+        for entity in self.list:
+            for parameter_name in entity.output_parameters.keys():
+                parameter = entity.output_parameters.get(parameter_name)
+                # only process one output parameter
+                if list_parameter_name is None and isinstance(parameter, list):
+                    list_parameter_name = parameter_name
+                else:
+                    other_parameters.append(parameter_name)
+            if list_parameter_name is not None:
+                break
+
+        if list_parameter_name is None:
+            logger.info("No list parameter found.")
+            return
+
+        logger.info("Flattening output for parameter \"" + list_parameter_name + "\"...")
+
+        flattened_entities = list()
+        for entity in self.list:
+            list_parameter = entity.output_parameters.get(list_parameter_name)
+            # remove output parameter to be flattened
+            entity.output_parameters.pop(list_parameter_name)
+
+            for element in list_parameter:
+                if not isinstance(element, dict):
+                    logger.info("List elements must be dicts, aborting...")
+                    return
+
+                flattened_entity = Entity(entity.configuration, entity.input_parameters)
+                # add old and new output parameters
+                flattened_entity.output_parameters = {
+                    **entity.output_parameters,
+                    **element
+                }
+                flattened_entities.append(flattened_entity)
+
+        # replace entities with flattened ones
+        self.list = flattened_entities

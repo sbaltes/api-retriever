@@ -77,6 +77,10 @@ def main():
     # retrieve data using API
     entities.retrieve_data()
 
+    # flatten output (if configured)
+    if config.flatten_output:
+        entities.flatten_output()
+
     if config.chained_request_name:
         # execute chained request (if configured)
         chained_entities = entities.execute_chained_request(args.config_dir)
