@@ -1,12 +1,14 @@
 /* Configuration for Google Custom Search
  * (see https://developers.google.com/custom-search/json-api/v1/using_rest)
- * Currenty, only the top 10 results are saved (support for pagination needed to retrieve the rest).
+ * Currenty, a start index has to be provided to be able to retrieve more than 10 results.
+ * A start index of 1 retrieves the 10 first results, a start index of 11 the 10 next results.
+ * In the future, support for pagination may be implemented.
  */
 {
   "name": "google_query___search-results",
-  "input_parameters": ["query"],
+  "input_parameters": ["query", "start"],
   "ignore_input_duplicates": false,
-  "uri_template": "https://www.googleapis.com/customsearch/v1?key={api_key_1}&cx={api_key_2}&q={query}&gl=US&field=items(title,links)",
+  "uri_template": "https://www.googleapis.com/customsearch/v1?key={api_key_1}&cx={api_key_2}&q={query}&gl=US&field=items(title,links)&start={start}",
   "headers": {},
   "api_keys": [
     "", // add API key here
