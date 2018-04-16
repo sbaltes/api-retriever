@@ -8,11 +8,11 @@
   "input_parameters": ["query", "start"],
   "ignore_input_duplicates": false,
   "uri_template": "https://www.googleapis.com/customsearch/v1?key={api_key_1}&cx={api_key_2}&q={query}&gl=US&field=items(title,links)&start={start}",
-  "headers": {},
   "api_keys": [
     "", // add API key here
     "" // add search engine id here
   ],
+  "headers": {},
   "delay": [40, 1000],
   "pre_request_callbacks": [],
   "output_parameter_mapping": {
