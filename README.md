@@ -57,12 +57,12 @@ If parameter `ignore_input_duplicates` is set to true, duplicate rows in the inp
 
 A corresponding CSV file could look like this:
 
-|repo_name
----
-|sbaltes/api-retriever
-|sbaltes/git-log-extractor
-|sotorrent/so-posthistory-extractor
-|...
+| repo_name                          |
+|------------------------------------|
+| sbaltes/api-retriever              |
+| sbaltes/git-log-extractor          |
+| sotorrent/so-posthistory-extractor |
+| ...                                |
 
 The next parameter we are going to configure is probably the most important one.
 The `uri_template` specifies how the resources is accessed.
@@ -166,10 +166,9 @@ The final configuration to retrieve the licenses for a list of GitHub repositori
 
 The resulting CSV file would look like this:
 
-
-|repo_name                          | license
-|---                                |---
-|sbaltes/api-retriever              |   apache-2.0
-|sbaltes/git-log-extractor          |   gpl-3.0
-|sotorrent/so-posthistory-extractor |   apache-2.0
-|...                                | ...
+| repo_name                          | license    |
+|------------------------------------|------------|
+| sbaltes/api-retriever              | apache-2.0 |
+| sbaltes/git-log-extractor          | gpl-3.0    |
+| sotorrent/so-posthistory-extractor | apache-2.0 |
+| ...                                | ...        |
