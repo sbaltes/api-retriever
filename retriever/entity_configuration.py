@@ -1,5 +1,6 @@
 import json
 import logging
+from collections import OrderedDict
 
 from inspect import signature
 
@@ -7,7 +8,9 @@ import os
 from jsmin import jsmin
 
 from retriever import callbacks
+from retriever.range_var import RangeVar
 from util.exceptions import IllegalArgumentError, IllegalConfigurationError
+from util.regex import RANGE_VAR_REGEX
 from util.uri_template import URITemplate
 
 # get root logger
@@ -44,9 +47,16 @@ class EntityConfiguration(object):
             self.api_keys = config_dict["api_keys"]
             # check if api key configured when required for uri_template
             uri_vars = self.uri_template.get_variables()
+            self.range_vars = OrderedDict()
             for var in uri_vars:
+                # validate API variables
                 if var.startswith("api_key") and not self.api_keys:
                     raise IllegalConfigurationError("API key required for URI template, but not configured.")
+                # check for range variables {name|start;stop;step}
+                if RANGE_VAR_REGEX.fullmatch(var):
+                    range_var = RangeVar(var)
+                    self.range_vars[range_var.name] = range_var
+                    self.uri_template.replace_range_variable(range_var)
             # configure if duplicate values in the input files should be ignored.
             self.ignore_input_duplicates = config_dict["ignore_input_duplicates"]
             # configure the randomized delay interval (ms) between two API requests (trying to prevent getting blocked)

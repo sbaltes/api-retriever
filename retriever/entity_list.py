@@ -33,7 +33,7 @@ class EntityList(object):
 
         self.configuration = configuration
         # list that stores entity objects
-        self.list = []
+        self.entities = []
         # session for data retrieval
         self.session = requests.Session()
         # index of first element to import from input_file (default: 0)
@@ -45,14 +45,14 @@ class EntityList(object):
         error_message = "Argument must be object of class Entity or class EntityList."
 
         if isinstance(entities, Entity):
-            self.list.append(entities)
+            self.entities.append(entities)
         elif isinstance(entities, EntityList):
-            self.list = self.list + entities.list
+            self.entities = self.entities + entities.entities
         elif isinstance(entities, list):
             for element in entities:
                 if not isinstance(element, Entity):
                     raise IllegalArgumentError(error_message)
-                self.list.append(element)
+                self.entities.append(element)
         else:
             raise IllegalArgumentError(error_message)
 
@@ -171,21 +171,21 @@ class EntityList(object):
                     # if ignore_input_duplicates is configured, check if entity already exists
                     if self.configuration.ignore_input_duplicates:
                         entity_exists = False
-                        for entity in self.list:
+                        for entity in self.entities:
                             if entity.equals(new_entity):
                                 entity_exists = True
                         if not entity_exists:
                             # add new entity to list
-                            self.list.append(new_entity)
+                            self.entities.append(new_entity)
                     else:  # ignore_input_duplicates is false
                         # add new entity to list
-                        self.list.append(new_entity)
+                        self.entities.append(new_entity)
                 else:
                     raise IllegalArgumentError("Wrong CSV format.")
 
                 current_index += 1
 
-        logger.info(str(len(self.list)) + " entities have been imported.")
+        logger.info(str(len(self.entities)) + " entities have been imported.")
 
     def retrieve_data(self):
         """
@@ -194,13 +194,28 @@ class EntityList(object):
         # retrieve data and filter list according to the return value of entity.retrieve_data
         # (may be false, e.g., because of filter callback)
 
+        # create entities within range if range var is configured
+        if len(self.configuration.range_vars) > 0:
+            new_entities = list()
+            for range_var_name in self.configuration.range_vars.keys():
+                range_var = self.configuration.range_vars.get(range_var_name)
+                for entity in self.entities:
+                    for i in range(range_var.start, range_var.stop, range_var.step):
+                        new_entity = Entity(entity.configuration, {
+                            **entity.input_parameters,
+                            range_var_name: str(i)
+                        })
+                        new_entities.append(new_entity)
+                self.entities = new_entities
+                new_entities = list()
+
         if self.configuration.apply_output_filter:
-            self.list = [entity for entity in self.list if entity.retrieve_data(self.session)]
+            self.entities = [entity for entity in self.entities if entity.retrieve_data(self.session)]
         else:
-            for entity in self.list:
+            for entity in self.entities:
                 entity.retrieve_data(self.session)
 
-        logger.info("Data for " + str(len(self.list)) + " entities has been saved.")
+        logger.info("Data for " + str(len(self.entities)) + " entities has been saved.")
 
     def execute_chained_request(self, config_dir):
         """
@@ -222,7 +237,7 @@ class EntityList(object):
             logger.info("Executing chained requests...")
 
             chained_request_entities = EntityList(chained_request_config)
-            for entity in self.list:
+            for entity in self.entities:
                 # get chained request entities
                 chained_request_entities.add(entity.get_chained_request_entities(chained_request_config))
                 # retrieve data for chained entities
@@ -241,7 +256,7 @@ class EntityList(object):
         :param delimiter: Column delimiter in CSV file (typically ',').
         """
 
-        if len(self.list) == 0:
+        if len(self.entities) == 0:
             logger.info("Nothing to export.")
             return
 
@@ -250,7 +265,7 @@ class EntityList(object):
 
         if self.chunk_size != 0:
             filename = '{0}_{1}-{2}.csv'.format(self.configuration.name, str(self.start_index),
-                                                str(self.start_index + min(len(self.list), self.chunk_size) - 1))
+                                                str(self.start_index + min(len(self.entities), self.chunk_size) - 1))
         else:
             filename = '{0}.csv'.format(self.configuration.name)
 
@@ -275,7 +290,7 @@ class EntityList(object):
             # check if an output parameter has been added and/or removed by a callback function and update column names
             parameters_removed = OrderedSet()
             parameters_added = OrderedSet()
-            for entity in self.list:
+            for entity in self.entities:
                 parameters_removed.update(OrderedSet(self.configuration.output_parameter_mapping.keys()).difference(
                     OrderedSet(entity.output_parameters.keys()))
                 )
@@ -290,7 +305,7 @@ class EntityList(object):
             # write header of CSV file
             writer.writerow(column_names)
 
-            for entity in self.list:
+            for entity in self.entities:
                 try:
                     row = OrderedDict.fromkeys(column_names)
 
@@ -326,7 +341,7 @@ class EntityList(object):
                 except UnicodeEncodeError:
                     logger.error("Encoding error while writing data for entity: " + str(entity))
 
-            logger.info(str(len(self.list)) + ' entities have been exported.')
+            logger.info(str(len(self.entities)) + ' entities have been exported.')
 
     def save_raw_files(self, output_dir):
         """
@@ -334,7 +349,7 @@ class EntityList(object):
         :param output_dir: Target directory for exported files.
         """
 
-        if len(self.list) == 0:
+        if len(self.entities) == 0:
             logger.info("Nothing to export.")
             return
 
@@ -343,7 +358,7 @@ class EntityList(object):
             os.makedirs(output_dir)
 
         logger.info('Exporting raw content of entities to directory ' + str(output_dir) + '...')
-        for entity in self.list:
+        for entity in self.entities:
             if not entity.configuration.raw_download:
                 raise IllegalConfigurationError("Raw download not configured for entity " + str(entity))
 
@@ -371,7 +386,7 @@ class EntityList(object):
             # remove raw content parameter from output
             entity.output_parameters.pop(entity.configuration.raw_parameter)
 
-        logger.info("Raw content of " + str(len(self.list)) + ' entities has been exported.')
+        logger.info("Raw content of " + str(len(self.entities)) + ' entities has been exported.')
 
     def flatten_output(self):
         """
@@ -383,7 +398,7 @@ class EntityList(object):
         # search for list parameter
         list_parameter_name = None
         other_parameters = list()
-        for entity in self.list:
+        for entity in self.entities:
             for parameter_name in entity.output_parameters.keys():
                 parameter = entity.output_parameters.get(parameter_name)
                 # only process one output parameter
@@ -401,10 +416,14 @@ class EntityList(object):
         logger.info("Flattening output for parameter \"" + list_parameter_name + "\"...")
 
         flattened_entities = list()
-        for entity in self.list:
+        for entity in self.entities:
             list_parameter = entity.output_parameters.get(list_parameter_name)
             # remove output parameter to be flattened
             entity.output_parameters.pop(list_parameter_name)
+
+            # skip if retrieval failed
+            if list_parameter is None:
+                continue
 
             for element in list_parameter:
                 if not isinstance(element, dict):
@@ -420,4 +439,4 @@ class EntityList(object):
                 flattened_entities.append(flattened_entity)
 
         # replace entities with flattened ones
-        self.list = flattened_entities
+        self.entities = flattened_entities

@@ -1,13 +1,11 @@
 /* Configuration for Google Custom Search
  * (see https://developers.google.com/custom-search/json-api/v1/using_rest)
- * Currenty, a start index has to be provided to be able to retrieve more than 10 results.
- * A start index of 1 retrieves the 10 first results, a start index of 11 the 10 next results.
- * In the future, support for pagination may be implemented.
+ * "Note: This API returns up to the first 100 results only."
  */
 {
-  "input_parameters": ["query", "start"],
+  "input_parameters": ["query"],
   "ignore_input_duplicates": false,
-  "uri_template": "https://www.googleapis.com/customsearch/v1?key={api_key_1}&cx={api_key_2}&q={query}&gl=US&field=items(title,links)&start={start}",
+  "uri_template": "https://www.googleapis.com/customsearch/v1?key={api_key_1}&cx={api_key_2}&q={query}&gl=US&field=items(title,links)&start={start|1;101;10}",
   "api_keys": [
     "", // add API key here
     "" // add search engine id here

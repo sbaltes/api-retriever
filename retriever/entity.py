@@ -47,8 +47,15 @@ class Entity(object):
             **self.input_parameters
         }
 
+        # add values for API keys
         for i in range(0, len(self.configuration.api_keys)):
             uri_variable_values["api_key_" + str(i+1)] = self.configuration.api_keys[i]
+
+        # set values for range variables
+        for range_var_name in configuration.range_vars:
+            if not range_var_name in input_parameter_values:
+                continue
+            uri_variable_values[range_var_name] = input_parameter_values[range_var_name]
 
         self.uri = self.configuration.uri_template.replace_variables(uri_variable_values)
 

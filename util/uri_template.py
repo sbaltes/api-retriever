@@ -17,6 +17,9 @@ class URITemplate(object):
     def get_variables(self):
         return URI_TEMPLATE_VARS_REGEX.findall(self.uri_template_str)
 
+    def replace_range_variable(self, range_var):
+        self.uri_template_str = self.uri_template_str.replace(range_var.range_str, range_var.name)
+
     def replace_variables(self, variable_values):
         """
         Replace all variables in the URI template with actual values.
