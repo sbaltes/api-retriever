@@ -110,16 +110,17 @@ def filter_patches_with_line(entity):
 def set_destination_path(entity):
     """
     Add destination path for raw content to output parameters of an entity.
-    See entity configuration: gh_repo_path_default_branch___file
+    See entity configuration: gh_repo_path_branch___file
     :param entity:
     """
-    if entity.output_parameters[entity.configuration.raw_parameter] is not None:
-        repo_name = entity.input_parameters["repo_name"].split("/")
-        user = repo_name[0]
-        repo = repo_name[1]
-        path = entity.input_parameters["path"].replace("/", " ")
-        # add destination path to output
-        entity.output_parameters["dest_path"] = os.path.join(user, repo, path)
+    if entity.output_parameters[entity.configuration.raw_parameter] is None:
+        return
+    repo_name = entity.input_parameters["repo_name"].split("/")
+    user = repo_name[0]
+    repo = repo_name[1]
+    path = entity.input_parameters["path"].replace("/", " ")
+    # add destination path to output
+    entity.output_parameters["destination"] = os.path.join(user, repo, path)
 
 
 def extract_email_from_commits(entity):

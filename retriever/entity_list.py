@@ -363,11 +363,11 @@ class EntityList(object):
                 raise IllegalConfigurationError("Raw download not configured for entity " + str(entity))
 
             if entity.output_parameters[entity.configuration.raw_parameter] is not None:
-                if "dest_path" not in entity.output_parameters.keys() or not entity.output_parameters["dest_path"]:
+                if "destination" not in entity.output_parameters.keys() or not entity.output_parameters["destination"]:
                     raise IllegalConfigurationError("Destination path not configured for entity " + str(entity))
 
-                # join path to target file, create missing directories
-                dest_file = os.path.join(output_dir, entity.output_parameters["dest_path"])
+                # join output path, create missing directories
+                dest_file = os.path.join(output_dir, entity.output_parameters["destination"])
                 dest_dir = os.path.dirname(dest_file)
                 if not os.path.exists(dest_dir):
                     os.makedirs(dest_dir)

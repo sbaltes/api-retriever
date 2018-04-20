@@ -1,0 +1,18 @@
+/* Retrieve files from GitHub. */
+{
+  "input_parameters": ["repo_name", "path", "branch"],
+  "ignore_input_duplicates": true,
+  "uri_template": "https://raw.githubusercontent.com/{repo_name}/{branch}/{path}",
+  "api_keys": [],  // no API key needed
+  "headers": {},
+  "delay": [40, 1000],
+  "pre_request_callbacks": [],
+  "output_parameter_mapping": {
+    "content": ["<raw_response>"],
+    "destination": [] // alternative to callback: "repo_name", "path"
+  },
+  "apply_output_filter": false,
+  "post_request_callbacks": ["set_destination_path"],
+  "flatten_output": false,
+  "chained_request": {}
+}

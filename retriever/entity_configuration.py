@@ -72,6 +72,13 @@ class EntityConfiguration(object):
                         and self.output_parameter_mapping[parameter][0] == "<raw_response>":
                     self.raw_download = True
                     self.raw_parameter = parameter
+                    break
+            if self.raw_download:
+                # destination parameter has to be set when using raw download
+                if "destination" not in self.output_parameter_mapping:
+                    raise IllegalConfigurationError("If raw download is configured, destination parameter must be set.")
+                if not isinstance(self.output_parameter_mapping["destination"], list):
+                    raise IllegalConfigurationError("Destination parameter must be an array.")
             # load pre_request_callbacks to validate and/or process the parameters before the request to the API is made
             self.pre_request_callbacks = []
             for callback_name in config_dict["pre_request_callbacks"]:

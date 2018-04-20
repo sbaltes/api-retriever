@@ -4,6 +4,8 @@ import time
 
 from random import randint
 from _socket import gaierror
+
+import os
 from requests.packages.urllib3.exceptions import MaxRetryError
 from requests.packages.urllib3.exceptions import NewConnectionError
 from collections import OrderedDict
@@ -34,6 +36,8 @@ class Entity(object):
         self.input_parameters = OrderedDict.fromkeys(configuration.input_parameters)
         # parameters that should be retrieved using the API
         self.output_parameters = OrderedDict.fromkeys(configuration.output_parameter_mapping.keys())
+        # destination path for raw download
+        self.destination = None
 
         # set values for input parameters
         for parameter in configuration.input_parameters:
@@ -111,6 +115,15 @@ class Entity(object):
                 if self.configuration.raw_download:
                     # raw download
                     self.output_parameters[self.configuration.raw_parameter] = response.content
+                    # join path to destination file
+                    dest_file = ""
+                    for part in self.configuration.output_parameter_mapping["destination"]:
+                        if part not in self.input_parameters:
+                            raise IllegalConfigurationError("Destination parameter "
+                                                            + part
+                                                            + " not found in input parameters.")
+                        dest_file = os.path.join(dest_file, self.input_parameters[part])
+                    self.output_parameters["destination"] = dest_file
                 else:
                     # JSON API call
                     # deserialize JSON string
