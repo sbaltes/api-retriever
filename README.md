@@ -43,7 +43,7 @@ The API retriever is configured using a JSON file, which must have the following
 In the following, we use examples from different APIs to demonstrate the configuration parameters.
 Let's start with a simple query that retrieves the licenses for a list of GitHub repositories.
 
-## Retrieve license of GitHub repositories
+## Example 1: Retrieve license of GitHub repositories
 
 First of all, the value of property `input_parameters` must be an array containing the column names of the input CSV file.
 In our example, the CSV file just contains one column with the names of the GitHub repositories we want to retrieve the license of.
@@ -172,3 +172,72 @@ The resulting CSV file would look like this:
 | sbaltes/git-log-extractor          | gpl-3.0    |
 | sotorrent/so-posthistory-extractor | apache-2.0 |
 | ...                                | ...        |
+
+
+## Example 2: Retrieve files from GitHub repositories
+
+In the next example, we are going to retrieve files from GitHub repositories.
+The input parameters are the `repo_name`, the `path` to the file within that repo, and the `branch` in which the file can be found.
+An input file could look like this:
+
+| repo_name                          | path                                                          | branch |
+|------------------------------------|---------------------------------------------------------------|--------|
+| sbaltes/api-retriever              | retriever/entity.py                                           | master |
+| sbaltes/git-log-extractor          | clone_projects.sh                                             | master |
+| sotorrent/so-posthistory-extractor | src/de/unitrier/st/soposthistory/blocks/PostBlockVersion.java | master |
+| ...                                | ...                                                           | ...    |
+
+We don't need an API key to retrieve files from GitHub, we can just use their raw interface:
+
+    {
+      "input_parameters": ["repo_name", "path", "branch"],
+      "ignore_input_duplicates": true,
+      "uri_template": "https://raw.githubusercontent.com/{repo_name}/{branch}/{path}",
+      "api_keys": [],
+      "headers": {},
+      "delay": [40, 1000],
+      "pre_request_callbacks": [],
+      "output_parameter_mapping": {
+        "content": ["<raw_response>"],
+        "destination": ["repo_name", "path"]
+      },
+      "apply_output_filter": false,
+      "post_request_callbacks": [],
+      "flatten_output": false,
+      "chained_request": {}
+    }
+
+The only notable difference to the previous example is the first output parameter:
+
+    "content": ["<raw_response>"]
+    
+Using the mapping `<raw_response>`, we can configure the api-retriever to save the complete raw response instead of first parsing it as JSON content and then applying the configured filter.
+However, when `<raw_response>` is configured, a destination path for each retrieved file is needed.
+The api-retriever searches for a `destination` parameter in the output parameter mapping and joins the configured columns from the input data.
+In our example, the file `retriever/entity.py` from repo `sbaltes/api-retriever` would we written to the path `<path_to_output_dir>/sbaltes/api-retriever/retriever/entity.py`.
+
+We can also configure a post request callback (executed after the request has been made) to set a custom path:
+
+    "post_request_callbacks": ["set_destination_path"],
+
+In that case, the api-retriever searches for a function named `set_destination_path` in `retriever/callbacks.py` and passes the retrieved entity to that function.
+A function modifying the output path could look like this:
+
+    def set_destination_path(entity):
+        """
+        Add destination path for raw content to output parameters of an entity.
+        See entity configuration: gh_repo_path_branch___file
+        :param entity:
+        """
+        if entity.output_parameters[entity.configuration.raw_parameter] is None:
+            return
+        repo_name = entity.input_parameters["repo_name"].split("/")
+        user = repo_name[0]
+        repo = repo_name[1]
+        path = entity.input_parameters["path"].replace("/", " ")
+        # add destination path to output
+        entity.output_parameters["destination"] = os.path.join(user, repo, path)
+
+In that case, the files would be written to `<path_to_output_dir>/<repo_name>/<converted_file_name>`, where the converted file name is the input path where slashes have been replaces with blanks.
+In case of the file `retriever/entity.py`, the converted path would be `retriever entity.py`.
+
