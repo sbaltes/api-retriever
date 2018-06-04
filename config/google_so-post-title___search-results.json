@@ -1,0 +1,26 @@
+/* Configuration for Google Custom Search
+ * (see https://developers.google.com/custom-search/json-api/v1/using_rest)
+ * "Note: This API returns up to the first 100 results only."
+ */
+{
+  "input_parameters": ["PostId", "Title"],
+  "ignore_input_duplicates": false,
+  "uri_template": "https://www.googleapis.com/customsearch/v1?key={api_key_1}&cx={api_key_2}&q={Title}&gl=US&field=items(title,links)&start={start|1;101;10}",
+  "api_keys": [
+    "", // add API key here
+    "" // add search engine id here
+  ],
+  "headers": {},
+  "delay": [40, 1000],
+  "pre_request_callbacks": [],
+  "output_parameter_mapping": {
+    "result": ["items", "*", {
+      "title": ["title"],
+      "url": ["link"]
+    }]
+  },
+  "apply_output_filter": false,
+  "post_request_callbacks": [],
+  "flatten_output": true,
+  "chained_request": {}
+}
