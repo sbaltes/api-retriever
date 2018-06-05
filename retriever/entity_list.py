@@ -6,10 +6,9 @@ import os
 import requests
 
 from _socket import gaierror
-from requests.packages.urllib3.exceptions import MaxRetryError
-from requests.packages.urllib3.exceptions import NewConnectionError
 from collections import OrderedDict
 from orderedset import OrderedSet
+from urllib3.exceptions import MaxRetryError, NewConnectionError
 
 from retriever.entity import Entity
 from retriever.entity_configuration import EntityConfiguration

@@ -3,7 +3,6 @@
 import logging
 import os
 
-from dateutil import parser
 from retriever.callback_helpers import normalize_java, get_added_lines
 from util.exceptions import IllegalConfigurationError
 

@@ -6,9 +6,9 @@ from random import randint
 from _socket import gaierror
 
 import os
-from requests.packages.urllib3.exceptions import MaxRetryError
-from requests.packages.urllib3.exceptions import NewConnectionError
 from collections import OrderedDict
+
+from urllib3.exceptions import MaxRetryError, NewConnectionError
 
 from util.exceptions import IllegalArgumentError, IllegalConfigurationError
 from util.regex import FLATTEN_OPERATOR_REGEX
