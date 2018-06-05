@@ -5,6 +5,23 @@ Examples for supported APIs include the [GitHub API](https://developer.github.co
 
 [![DOI](https://zenodo.org/badge/87788115.svg)](https://zenodo.org/badge/latestdoi/87788115)
 
+# Setup
+
+Python 3 is required. The dependencies are specified in `requirements.txt`.
+To install those dependencies execute:
+
+    pip3 install -r requirements.txt
+
+Optional: Setup virtual environment with [pyenv](https://github.com/pyenv/pyenv#homebrew-on-mac-os-x) 
+and [virtualenv](https://github.com/pyenv/pyenv-virtualenv) before executing the above command:
+
+    pyenv install 3.6.5
+    pyenv virtualenv 3.6.5 api-retriever_3.6.5
+    pyenv activate api-retriever_3.6.5
+    
+    pip3 install --upgrade pip
+
+
 # Usage
 
 Basic usage:
