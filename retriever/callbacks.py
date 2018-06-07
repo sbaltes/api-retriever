@@ -35,6 +35,30 @@ def validate_code_block_normalization(entity):
         raise IllegalConfigurationError("Input parameter missing: " + str(e))
 
 
+def check_if_next_page_exists(entity):
+    """
+    Check if search for this query should be continued (next result page exists for predecessor).
+    :param entity: An entity for Google search results.
+    :return: True if next page with search results exists, False otherwise.
+    """
+
+    # continue retrieval if no predecessor or no root entity exists
+    if not entity.predecessor or not entity.root_entity:
+        return True
+
+    # continue if we reached a new root entity
+    if entity.root_entity != entity.predecessor.root_entity:
+        return True
+
+    # check if next page exists for predecessor
+    next_page_exists =  entity.predecessor.json_response and "nextPage" in entity.predecessor.json_response["queries"]
+
+    if not next_page_exists:
+        logger.info("Last result page reached for entity " + str(entity) + ".")
+
+    return next_page_exists
+
+
 ##########################
 # post_request_callbacks #
 ##########################
@@ -52,7 +76,8 @@ def sort_commits(entity):
             commit["commit_date"] = parser.parse(commit["commit_date"])
 
         # sort commits (oldest commits first)
-        entity.output_parameters["commits"] = sorted(entity.output_parameters["commits"], key=lambda c: c["commit_date"])
+        entity.output_parameters["commits"] = sorted(entity.output_parameters["commits"],
+                                                     key=lambda c: c["commit_date"])
 
         # convert commit dates back to string representation
         for commit in entity.output_parameters["commits"]:

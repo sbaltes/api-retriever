@@ -22,12 +22,13 @@ class Entity(object):
     Class representing one API entity for which information should be retrieved over an API.
     """
 
-    def __init__(self, configuration, input_parameter_values):
+    def __init__(self, configuration, input_parameter_values, predecessor):
         """
         To initialize an entity, a corresponding entity configuration together
         and values for the input parameter(s) are needed.
         :param configuration: an object of class EntityConfiguration
         :param input_parameter_values: A dictionary with values for the input parameters defined in the configuration.
+        :param predecessor: predecessor in entity list
         """
 
         # corresponding entity configuration
@@ -63,6 +64,14 @@ class Entity(object):
 
         self.uri = self.configuration.uri_template.replace_variables(uri_variable_values)
 
+        # set predecessor
+        self.predecessor = predecessor
+        # root entity is set if range variables are used
+        self.root_entity = None
+
+        # store JSON response data (may be needed by callbacks)
+        self.json_response = None
+
     def equals(self, other_entity):
         """
         Function to compare two entities according to their input parameters (needed to remove duplicates).
@@ -96,7 +105,10 @@ class Entity(object):
 
             # execute pre_request_callbacks
             for callback in self.configuration.pre_request_callbacks:
-                callback(self)
+                result = callback(self)
+                # if pre request filtering is enabled, apply filter
+                if self.configuration.pre_request_callback_filter and not result:
+                    return False
 
             # reduce request frequency as configured
             delay = randint(self.configuration.delay_min,
@@ -128,6 +140,7 @@ class Entity(object):
                     # JSON API call
                     # deserialize JSON string
                     json_response = json.loads(response.text)
+                    self.json_response = json_response
                     # extract parameters according to parameter mapping
                     self._extract_output_parameters(json_response)
 
@@ -317,10 +330,10 @@ class Entity(object):
                                 for inner_parameter in inner_parameters:
                                     flattened_input_parameters_chained_request[inner_parameter] = \
                                         list_element[inner_parameter]
-                                chained_request_entities.append(Entity(chained_request_config, flattened_input_parameters_chained_request))
+                                chained_request_entities.append(Entity(chained_request_config, flattened_input_parameters_chained_request, None))
 
                 else:  # no flatten parameters defined
-                    chained_request_entities.append(Entity(chained_request_config, input_parameters_chained_request))
+                    chained_request_entities.append(Entity(chained_request_config, input_parameters_chained_request, None))
 
             except KeyError as e:
                 raise IllegalConfigurationError("Reading chained request from configuration failed: Parameter "

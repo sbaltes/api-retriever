@@ -54,6 +54,11 @@ class EntityList(object):
                 self.entities.append(element)
         else:
             raise IllegalArgumentError(error_message)
+        self.set_predecessors()
+
+    def set_predecessors(self):
+        for pos in range(1, len(self.entities)):
+            self.entities[pos].predecessor = self.entities[pos-1]
 
     def read_from_csv(self, input_file, delimiter):
         """
@@ -137,6 +142,7 @@ class EntityList(object):
                     raise IllegalArgumentError("Unknown column name in CSV file: " + header[index])
 
             # read CSV file
+            predecessor = None
             current_index = 0
             for row in reader:
                 # only read value from start_index to start_index+chunk_size-1 (if chunk_size is 0, read until the end)
@@ -165,7 +171,8 @@ class EntityList(object):
                             raise IllegalArgumentError("No value for parameter " + parameter)
 
                     # create entity from values in row
-                    new_entity = Entity(self.configuration, input_parameter_values)
+                    new_entity = Entity(self.configuration, input_parameter_values, predecessor)
+                    predecessor = new_entity
 
                     # if ignore_input_duplicates is configured, check if entity already exists
                     if self.configuration.ignore_input_duplicates:
@@ -186,14 +193,10 @@ class EntityList(object):
 
         logger.info(str(len(self.entities)) + " entities have been imported.")
 
-    def retrieve_data(self):
+    def resolve_range_vars(self):
         """
-        Retrieve data for all entities in the list.
+        Create entities within range if range var is configured
         """
-        # retrieve data and filter list according to the return value of entity.retrieve_data
-        # (may be false, e.g., because of filter callback)
-
-        # create entities within range if range var is configured
         if len(self.configuration.range_vars) > 0:
             new_entities = list()
             for range_var_name in self.configuration.range_vars.keys():
@@ -201,14 +204,25 @@ class EntityList(object):
                 for entity in self.entities:
                     for i in range(range_var.start, range_var.stop, range_var.step):
                         new_entity = Entity(entity.configuration, {
-                            **entity.input_parameters,
-                            range_var_name: str(i)
-                        })
+                                **entity.input_parameters,
+                                range_var_name: str(i)
+                            }, None)
+                        new_entity.root_entity = entity
                         new_entities.append(new_entity)
                 self.entities = new_entities
                 new_entities = list()
+        self.set_predecessors()
 
-        if self.configuration.apply_output_filter:
+    def retrieve_data(self):
+        """
+        Retrieve data for all entities in the list.
+        """
+        # retrieve data and filter list according to the return value of entity.retrieve_data
+        # (may be false, e.g., because of filter callback)
+
+        self.resolve_range_vars()
+
+        if self.configuration.post_request_callback_filter:
             self.entities = [entity for entity in self.entities if entity.retrieve_data(self.session)]
         else:
             for entity in self.entities:
@@ -239,6 +253,8 @@ class EntityList(object):
             for entity in self.entities:
                 # get chained request entities
                 chained_request_entities.add(entity.get_chained_request_entities(chained_request_config))
+                # set predecessors
+                chained_request_entities.set_predecessors()
                 # retrieve data for chained entities
                 chained_request_entities.retrieve_data()
 
@@ -429,7 +445,7 @@ class EntityList(object):
                     logger.info("List elements must be dicts, aborting...")
                     return
 
-                flattened_entity = Entity(entity.configuration, entity.input_parameters)
+                flattened_entity = Entity(entity.configuration, entity.input_parameters, entity.predecessor)
                 # add old and new output parameters
                 flattened_entity.output_parameters = {
                     **entity.output_parameters,

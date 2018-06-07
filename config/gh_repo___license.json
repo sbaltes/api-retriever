@@ -7,11 +7,12 @@
   "headers": {},
   "delay": [100, 2000],
   "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
   "output_parameter_mapping": {
     "license": ["license", "key"]
   },
-  "apply_output_filter": false,
   "post_request_callbacks": [],
+  "post_request_callback_filter": false,
   "flatten_output": false,
   "chained_request": {}
 }

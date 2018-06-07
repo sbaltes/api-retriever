@@ -12,15 +12,16 @@
   ],
   "headers": {},
   "delay": [40, 1000],
-  "pre_request_callbacks": [],
+  "pre_request_callbacks": ["check_if_next_page_exists"],
+  "pre_request_callback_filter": true,
   "output_parameter_mapping": {
     "result": ["items", "*", {
       "title": ["title"],
       "url": ["link"]
     }]
   },
-  "apply_output_filter": false,
   "post_request_callbacks": [],
+  "post_request_callback_filter": false,
   "flatten_output": true,
   "chained_request": {}
 }

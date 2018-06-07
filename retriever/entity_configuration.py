@@ -79,16 +79,19 @@ class EntityConfiguration(object):
                     raise IllegalConfigurationError("If raw download is configured, destination parameter must be set.")
                 if not isinstance(self.output_parameter_mapping["destination"], list):
                     raise IllegalConfigurationError("Destination parameter must be an array.")
+
+            # configure if pre request callbacks should be used to filter before retrieving data
+            self.pre_request_callback_filter = config_dict["pre_request_callback_filter"]
             # load pre_request_callbacks to validate and/or process the parameters before the request to the API is made
             self.pre_request_callbacks = []
             for callback_name in config_dict["pre_request_callbacks"]:
                 self.pre_request_callbacks.append(EntityConfiguration._load_callback(callback_name))
-            # configure if filters should be applied when retrieving data
-            self.apply_output_filter = config_dict["apply_output_filter"]
             # load post_request_callbacks to process, validate and/or filter output parameters from a JSON API response
             self.post_request_callbacks = []
             for callback_name in config_dict["post_request_callbacks"]:
                 self.post_request_callbacks.append(EntityConfiguration._load_callback(callback_name))
+            # configure if post request callbacks should be used to filter when retrieving data
+            self.post_request_callback_filter = config_dict["post_request_callback_filter"]
             # optionally, dicts in the results can be flattened
             self.flatten_output = config_dict["flatten_output"]
             #  save (optional) chained request
@@ -161,7 +164,7 @@ class EntityConfiguration(object):
             if callback not in other_config.pre_request_callbacks:
                 return False
 
-        if not self.apply_output_filter == other_config.apply_output_filter:
+        if not self.post_request_callback_filter == other_config.post_request_callback_filter:
             return False
 
         for callback in self.post_request_callbacks:

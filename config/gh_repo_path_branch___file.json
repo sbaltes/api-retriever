@@ -7,12 +7,13 @@
   "headers": {},
   "delay": [40, 1000],
   "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
   "output_parameter_mapping": {
     "content": ["<raw_response>"],
     "destination": [] // alternative to callback: "repo_name", "path"
   },
-  "apply_output_filter": false,
   "post_request_callbacks": ["set_destination_path"],
+  "post_request_callback_filter": false,
   "flatten_output": false,
   "chained_request": {}
 }

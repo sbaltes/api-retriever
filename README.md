@@ -50,9 +50,10 @@ The API retriever is configured using a JSON file, which must have the following
       "api_keys": [],
       "delay": [],
       "pre_request_callbacks": [],
+      "pre_request_callback_filter": false,
       "output_parameter_mapping": {},
-      "apply_output_filter": false,
       "post_request_callbacks": [],
+      "post_request_callback_filter": false,
       "flatten_output": false,
       "chained_request": {}
     }
@@ -155,6 +156,7 @@ In our example, we store the property `key` of that JSON object in the output pa
       "headers": {},
       "delay": [100, 2000],
       "pre_request_callbacks": [],
+      "pre_request_callback_filter": false,
       "output_parameter_mapping": {
         "license": ["license", "key"]
       },
@@ -172,11 +174,12 @@ The final configuration to retrieve the licenses for a list of GitHub repositori
       "headers": {},
       "delay": [100, 2000],
       "pre_request_callbacks": [],
+      "pre_request_callback_filter": false,
       "output_parameter_mapping": {
         "license": ["license", "key"]
       },
-      "apply_output_filter": false,
       "post_request_callbacks": [],
+      "post_request_callback_filter": false,
       "flatten_output": false,
       "chained_request": {}
     }
@@ -214,12 +217,13 @@ We don't need an API key to retrieve files from GitHub, we can just use their ra
       "headers": {},
       "delay": [40, 1000],
       "pre_request_callbacks": [],
+      "pre_request_callback_filter": false,
       "output_parameter_mapping": {
         "content": ["<raw_response>"],
         "destination": ["repo_name", "path"]
       },
-      "apply_output_filter": false,
       "post_request_callbacks": [],
+      "post_request_callback_filter": false,
       "flatten_output": false,
       "chained_request": {}
     }
