@@ -1,3 +1,5 @@
+import urllib.parse
+
 from util.exceptions import IllegalArgumentError
 from util.regex import URI_TEMPLATE_VARS_REGEX
 
@@ -33,7 +35,7 @@ class URITemplate(object):
         for variable in uri_variables:
             value = variable_values.get(variable, None)
             if value:
-                uri = uri.replace("{" + variable + "}", value)
+                uri = uri.replace("{" + variable + "}", urllib.parse.quote(value))
             else:
                 IllegalArgumentError("Value for URI variable " + variable + " missing.")
 

@@ -165,6 +165,8 @@ class EntityList(object):
                         else:  # get value from CSV
                             parameter_index = input_parameter_indices[parameter]
                             value = row[parameter_index]
+                            # unescape escaped double quotes
+                            value = str(value).replace("\"\"", "\"")
                         if value:
                             input_parameter_values[parameter] = value
                         else:
