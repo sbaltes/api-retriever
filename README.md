@@ -1,7 +1,7 @@
 # api-retriever
 
 Retrieve and filter data from public APIs and export it to CSV files.
-Examples for supported APIs include the [GitHub API](https://developer.github.com/v3/), the [Stack Exchange API](https://api.stackexchange.com/docs), the [Google Custom Search API](https://developers.google.com/custom-search/json-api/v1/using_rest), and the [unofficial Airbnb API](https://web.archive.org/web/20170519054521/http://www.airbnbapi.org/).
+Examples for supported APIs include the [GitHub API](https://developer.github.com/v3/), the [Stack Exchange API](https://api.stackexchange.com/docs), the [Google Custom Search API](https://developers.google.com/custom-search/json-api/v1/using_rest), the [unofficial Airbnb API](https://web.archive.org/web/20170519054521/http://www.airbnbapi.org/), and the [DBLP API](https://dblp.uni-trier.de/faq/13501473).
 
 [![DOI](https://zenodo.org/badge/87788115.svg)](https://zenodo.org/badge/latestdoi/87788115)
 
@@ -61,7 +61,7 @@ The API retriever is configured using a JSON file, which must have the following
 In the following, we use examples from different APIs to demonstrate the configuration parameters.
 Let's start with a simple query that retrieves the licenses for a list of GitHub repositories.
 
-## Example 1: Retrieve license of GitHub repositories
+## Example 1: Retrieving licenses of GitHub repositories
 
 First of all, the value of property `input_parameters` must be an array containing the column names of the input CSV file.
 In our example, the CSV file just contains one column with the names of the GitHub repositories we want to retrieve the license of.
@@ -194,7 +194,7 @@ The resulting CSV file would look like this:
 | ...                                | ...        |
 
 
-## Example 2: Retrieve files from GitHub repositories
+## Example 2: Retrieving files from GitHub repositories
 
 In the next example, we are going to retrieve files from GitHub repositories.
 The input parameters are the `repo_name`, the `path` to the file within that repo, and the `branch` in which the file can be found.
@@ -262,3 +262,55 @@ A function modifying the output path could look like this:
 In that case, the files would be written to `<path_to_output_dir>/<repo_name>/<converted_file_name>`, where the converted file name is the input path where slashes have been replaces with blanks.
 In case of the file `retriever/entity.py`, the converted path would be `retriever entity.py`.
 
+## Example 3: Retrieving papers using the DBLP API
+
+In this example, we are going to retrieve papers using the [DBLP API](https://dblp.uni-trier.de/faq/13501473).
+The input parameters are the `dblp_identifier` and `min_length`.
+The first parameter identifies the venue, the second the minimal required length for papers to be included in the output file.
+
+An input file could look like this:
+
+| dblp_identifier     | min_length                                                          
+|---------------------|------------
+| conf/icse/icse2018  | 10                                       
+| journals/tse/tse44  | 5
+
+We don't need an API key to retrieve files from DBLP, we can just use their search API:
+
+    {
+      "input_parameters": ["dblp_identifier", "min_length"],
+      "ignore_input_duplicates": false,
+      "uri_template": "https://dblp.org/search/publ/api?q=toc%3Adb/{dblp_identifier}.bht%3A&format=json&h=1000",
+      "api_keys": [
+        "", // add API key here
+        "" // add search engine id here
+      ],
+      "headers": {},
+      "delay": [100, 1000],
+      "pre_request_callbacks": [],
+      "pre_request_callback_filter": false,
+      "output_parameter_mapping": {
+        "papers": ["result", "hits", "hit", "*", {
+          "venue": ["info", "venue"],
+          "year": ["info", "year"],
+          "title": ["info", "title"],
+          "authors": ["info", "authors"],
+          "pages": ["info", "pages"],
+          "doi": ["info", "doi"],
+          "electronic_edition": ["info", "ee"],
+          "dblp_url": ["info", "url"]
+        }]
+      },
+      "post_request_callbacks": ["flatten_dblp_authors", "add_paper_length", "apply_paper_length_filter", "unescape_html"],
+      "post_request_callback_filter": false,
+      "flatten_output": true,
+      "chained_request": {}
+    }
+
+The callback `flatten_dblp_authors` removes the disambiguation numbering that DBLP uses and joins all authors into a semicolon-separated list.
+
+The callback `add_paper_length` calculates the paper length based on the provided page range.
+
+The callback `apply_paper_length_filter` filters papers according to the configured minimal paper length.
+
+The callback `unescape_html` unescapes HTML characters in paper titles.

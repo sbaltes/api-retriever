@@ -1,0 +1,30 @@
+/* Download papers from conference proceedings or journal volumes. */
+{
+  "input_parameters": ["dblp_identifier", "min_length"],
+  "ignore_input_duplicates": false,
+  "uri_template": "https://dblp.org/search/publ/api?q=toc%3Adb/{dblp_identifier}.bht%3A&format=json&h=1000",
+  "api_keys": [
+    "", // add API key here
+    "" // add search engine id here
+  ],
+  "headers": {},
+  "delay": [100, 1000],
+  "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
+  "output_parameter_mapping": {
+    "papers": ["result", "hits", "hit", "*", {
+      "venue": ["info", "venue"],
+      "year": ["info", "year"],
+      "title": ["info", "title"],
+      "authors": ["info", "authors"],
+      "pages": ["info", "pages"],
+      "doi": ["info", "doi"],
+      "electronic_edition": ["info", "ee"],
+      "dblp_url": ["info", "url"]
+    }]
+  },
+  "post_request_callbacks": ["flatten_dblp_authors", "add_paper_length", "apply_paper_length_filter", "unescape_html"],
+  "post_request_callback_filter": false,
+  "flatten_output": true,
+  "chained_request": {}
+}

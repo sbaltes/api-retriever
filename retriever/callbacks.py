@@ -1,7 +1,8 @@
 """ Callbacks that are executed before or after retrieving API data. """
-
+import html
 import logging
 import os
+import re
 
 from dateutil import parser
 from retriever.callback_helpers import normalize_java, get_added_lines
@@ -167,3 +168,65 @@ def extract_email_from_commits(entity):
             return True
 
     return False
+
+
+def flatten_dblp_authors(entity):
+    """
+    Flatten authors to a semicolon-separated list and remove numbering.
+    :param entity: An entity with DBLP papers.
+    :return: None
+    """
+    for paper in entity.output_parameters["papers"]:
+        if isinstance(paper["authors"]["author"], str):
+            # only one author
+            paper["authors"] = paper["authors"]["author"]
+        else:
+            # multiple authors
+            paper["authors"] = "; ".join(paper["authors"]["author"])
+
+        paper["authors"] = re.sub("\s*[0-9]+\s*", "", paper["authors"])
+
+
+def add_paper_length(entity):
+    """
+    Calculate paper length based on page range.
+    :param entity: An entity with DBLP papers.
+    :return: None
+    """
+    for paper in entity.output_parameters["papers"]:
+        if not paper["pages"]:
+            paper["length"] = 0
+            continue
+
+        pages = paper["pages"].split("-")
+
+        length = 0
+        if len(pages) == 1:
+            length = 1
+        elif len(pages) == 2:
+            begin_page = pages[0].split(":")
+            end_page = pages[1].split(":")
+
+            if len(begin_page) == 1:
+                length = int(end_page[0]) - int(begin_page[0]) + 1
+            elif len(begin_page) == 2:
+                length = int(end_page[1]) - int(begin_page[1]) + 1  # numbered articles, see, e.g., TOSEM
+
+        paper["length"] = length
+
+
+def apply_paper_length_filter(entity):
+    """
+    Only select papers with at least 5 pages.
+    (exclude editorials, extended abstracts of journal first papers, etc.)
+    :param entity: An entity with DBLP papers.
+    :return: None
+    """
+    entity.output_parameters["papers"] = [paper
+                                          for paper in entity.output_parameters["papers"]
+                                          if int(paper["length"]) >= int(entity.input_parameters["min_length"])]
+
+
+def unescape_html(entity):
+    for paper in entity.output_parameters["papers"]:
+        paper["title"] = html.unescape(paper["title"])
