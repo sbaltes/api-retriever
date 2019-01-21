@@ -153,7 +153,7 @@ class Entity(object):
                             logger.info("Entity removed because of filter callback " + str(callback) + ": " + str(self))
                             return False
 
-                    return True
+                return True
 
             else:
                 logger.error("Error " + str(response.status_code) + ": Could not retrieve data for entity " + str(self)
