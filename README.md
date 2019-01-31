@@ -357,6 +357,7 @@ The callback `apply_paper_length_filter` filters papers according to the configu
 
 The callback `unescape_html` unescapes HTML characters in paper titles.
 
+
 ## Example 4: Retrieve information about Airbnb hosts and listings
 
 A configuration file that can be used to retrieve information about Airbnb hosts can be found [here](config/airbnb_host___data.json):
@@ -367,7 +368,15 @@ A configuration file that can be used to retrieve information about Airbnb listi
 
     python3 api-retriever.py -i input/airbnb_listings.csv -o output -c config/airbnb_listing___data.json
 
-## Example 5: Further GitHub examples
+
+## Example 5: Retrieve top 100 results for Google search queries
+
+In this example, we use [Google Custom Search](https://developers.google.com/custom-search/json-api/v1/using_rest) to retrieve the top 100 results for a list of search queries ([config](config/google_query___search-results.json)):
+
+    python3 api-retriever.py -i input/google_queries.csv -o output -c config/google_query___search-results.json
+
+
+## Further GitHub examples
 
 ### Searching for a code snippet in GitHub commits
 
@@ -399,3 +408,8 @@ Retrieve the account type and email address (if available) for GitHub users ([co
 
     python3 api-retriever.py -i input/gh_users.csv -o output -c config/gh_user___type_email.json
 
+### Retrieving user email addresses from GitHub repository
+
+Retrieve the email address that a certain GitHub user used when committing to a certain GitHub repository ([config](config/gh_user_repo___commit_email.json)):
+
+    python3 api-retriever.py -i input/gh_users_repos.csv -o output -c config/gh_user_repo___commit_email.json
