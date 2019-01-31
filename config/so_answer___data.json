@@ -1,17 +1,20 @@
-/* Get data about SO answers. */
+/* Retrieve metadata for Stack Overflow answers. */
 {
-  "name": "so_answer___data",
-  "input_parameters": ["id", ["filter",
+  "input_parameters": ["id",
+    ["filter",
       "https://api.stackexchange.com/2.2/filters/create?include=answer.comment_count;answer.down_vote_count;answer.last_editor;answer.link;answer.share_link;answer.tags;answer.title;answer.up_vote_count;question.comment_count;question.down_vote_count;question.favorite_count;question.last_editor;question.share_link;question.up_vote_count&exclude=answer.community_owned_date;question.bounty_amount;question.bounty_closes_date;question.community_owned_date;question.migrated_from;question.migrated_to&unsafe=false>",
       ["items", "0", "filter"]
     ]
   ],
-  "ignore_input_duplicates": true,
-  "uri_template": "https://api.stackexchange.com/2.2/answers/{id}?key={api_key}&site=stackoverflow&filter={filter}",
+  "ignore_input_duplicates": false,
+  "uri_template": "https://api.stackexchange.com/2.2/answers/{id}?key={api_key_1}&site=stackoverflow&filter={filter}",
+  "api_keys": [
+    "" // add Stack Overflow API key here
+  ],
   "headers": {},
-  "api_key": "",  // add API key here
-  "delay": [40, 1000],
+  "delay": [1000, 1500],
   "pre_request_callbacks": [],
+  "pre_request_callback_filter": true,
   "output_parameter_mapping": {
     "is_accepted": ["items", "0", "is_accepted"],
     "answer_id": ["items", "0", "answer_id"],
@@ -31,7 +34,8 @@
     "last_activity_date": ["items", "0", "last_activity_date"],
     "question_id": ["items", "0", "question_id"]
   },
-  "apply_output_filter": false,
   "post_request_callbacks": [],
-  "chained_request": {} // TODO: get question data
+  "post_request_callback_filter": false,
+  "flatten_output": false,
+  "chained_request": {}  // TODO: get metadata for corresponding questions
 }

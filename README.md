@@ -375,6 +375,21 @@ In this example, we use [Google Custom Search](https://developers.google.com/cus
 
     python3 api-retriever.py -i input/google_queries.csv -o output -c config/google_query___search-results.json
 
+## Example 6: Retrieve metadata about Stack Overflow answers
+
+In this example, we use the [Stack Exchange API](http://api.stackexchange.com/docs) to retrieve metadata about Stack Overflow answers ([config](config/so_answer___data.json)):
+
+    python3 api-retriever.py -i input/so_answers.csv -o output -c config/so_answer___data.json
+
+One interesting aspect of this example is that we use the result of a query as an additional input parameter:
+    
+    "input_parameters": ["id",  ["filter",
+            "https://api.stackexchange.com/2.2/filters/create?include=answer.comment_count;...",
+            ["items", "0", "filter"]]
+    ],
+
+This is needed to configure the filter for the Stack Exchange API, which defines the data to retrieve.
+
 
 ## Further GitHub examples
 

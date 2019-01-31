@@ -238,7 +238,7 @@ class Entity(object):
                                 return "None"
                             else:
                                 filtered_response = filtered_response[current_filter]
-                    except KeyError:
+                    except (KeyError, IndexError):
                         logger.error("Could not apply filter <" + str(current_filter) + "> to response "
                                      + str(filtered_response) + ".")
                         return None
