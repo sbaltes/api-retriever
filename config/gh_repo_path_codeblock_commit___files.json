@@ -1,20 +1,25 @@
-/* Retrieve modified files for a commit and check if a certain code block has been added. */
+/* Retrieve modified files for a commit and check if a certain code block has been added
+ * (see also gh_repo_path_codeblock___commits.json)
+ */
 {
-  "name": "gh_repo_path_codeblock_commit___files",
   "input_parameters": ["repo_name", "path", "code_block", "code_block_normalized", "commit_sha", "commit_date"],
   "ignore_input_duplicates": false,
-  "uri_template": "https://api.github.com/repos/{repo_name}/commits/{commit_sha}?access_token={api_key}",
+  "uri_template": "https://api.github.com/repos/{repo_name}/commits/{commit_sha}?access_token={api_key_1}",
+  "api_keys": [
+    "" // add GitHub access token here
+  ],
   "headers": {},
-  "api_key": "", // add API key here
   "delay": [40, 1000],
   "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
   "output_parameter_mapping": {
     "files": ["files", "*", {
         "filename": ["filename"],
         "patch": ["patch"]
       }]
   },
-  "apply_output_filter": true,
-  "post_request_callbacks": ["filter_patches_with_code_block"], // this callback also changes the output parameters
+  "post_request_callbacks": ["filter_patches_with_code_block"],
+  "post_request_callback_filter": true,
+  "flatten_output": false,
   "chained_request": {}
 }

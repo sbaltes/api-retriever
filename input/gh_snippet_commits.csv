@@ -1,0 +1,242 @@
+repo_name,path,code_block,code_block_normalized
+tberg12/murphy,src/tberg/murphy/gpu/CudaUtil.java,"// returns all higher 16 bits as 0 for all results
+    public static int fromFloat( float fval )
+    {
+        int fbits = Float.floatToIntBits( fval );
+        int sign = fbits >>> 16 & 0x8000;          // sign only
+        int val = ( fbits & 0x7fffffff ) + 0x1000; // rounded value
+        if( val >= 0x47800000 )               // might be or become NaN/Inf
+        {                                     // avoid Inf due to rounding
+            if( ( fbits & 0x7fffffff ) >= 0x47800000 )
+            {                                 // is or must become NaN/Inf
+                if( val < 0x7f800000 )        // was value but too large
+                    return sign | 0x7c00;     // make it +/-Inf
+                return sign | 0x7c00 |        // remains +/-Inf or NaN
+                    ( fbits & 0x007fffff ) >>> 13; // keep NaN (and Inf) bits
+            }
+            return sign | 0x7bff;             // unrounded not quite Inf
+        }
+        if( val >= 0x38800000 )               // remains normalized value
+            return sign | val - 0x38000000 >>> 13; // exp - 127 + 15
+        if( val < 0x33000000 )                // too small for subnormal
+            return sign;                      // becomes +/-0
+        val = ( fbits & 0x7fffffff ) >>> 23;  // tmp exp for subnormal calc
+        return sign | ( ( fbits & 0x7fffff | 0x800000 ) // add subnormal bit
+             + ( 0x800000 >>> val - 102 )     // round depending on cut off
+          >>> 126 - val );   // div by 2^(1-(exp-127+15)) and >> 13 | exp=0
+    }",publicstaticintfromfloatfloatfvalintfbits=float.floattointbitsfvalintsign=fbits>>>16&0x8000intval=fbits&0x7fffffff+0x1000ifval>=0x47800000iffbits&0x7fffffff>=0x47800000ifval<0x7f800000returnsign|0x7c00returnsign|0x7c00|fbits&0x007fffff>>>13returnsign|0x7bffifval>=0x38800000returnsign|val-0x38000000>>>13ifval<0x33000000returnsignval=fbits&0x7fffffff>>>23returnsign|fbits&0x7fffff|0x800000+0x800000>>>val-102>>>126-val
+vogellacompany/codeexamples-android,de.vogella.android.apitest/src/com/example/android/apis/graphics/ColorPickerDialog.java,"public class ColorPickerDialog extends Dialog {
+        public interface OnColorChangedListener {
+            void colorChanged(int color);
+        }
+        private OnColorChangedListener mListener;
+        private int mInitialColor;
+        private static class ColorPickerView extends View {
+            private Paint mPaint;
+            private Paint mCenterPaint;
+            private final int[] mColors;
+            private OnColorChangedListener mListener;
+            ColorPickerView(Context c, OnColorChangedListener l, int color) {
+                super(c);
+                mListener = l;
+                mColors = new int[] {
+                        0xFFFF0000, 0xFFFF00FF, 0xFF0000FF, 0xFF00FFFF, 0xFF00FF00,
+                        0xFFFFFF00, 0xFFFF0000
+                };
+                Shader s = new SweepGradient(0, 0, mColors, null);
+                mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                mPaint.setShader(s);
+                mPaint.setStyle(Paint.Style.STROKE);
+                mPaint.setStrokeWidth(32);
+                mCenterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                mCenterPaint.setColor(color);
+                mCenterPaint.setStrokeWidth(5);
+            }
+            private boolean mTrackingCenter;
+            private boolean mHighlightCenter;
+            @Override
+            protected void onDraw(Canvas canvas) {
+                float r = CENTER_X - mPaint.getStrokeWidth()*0.5f;
+                canvas.translate(CENTER_X, CENTER_X);
+                canvas.drawOval(new RectF(-r, -r, r, r), mPaint);
+                canvas.drawCircle(0, 0, CENTER_RADIUS, mCenterPaint);
+                if (mTrackingCenter) {
+                    int c = mCenterPaint.getColor();
+                    mCenterPaint.setStyle(Paint.Style.STROKE);
+                    if (mHighlightCenter) {
+                        mCenterPaint.setAlpha(0xFF);
+                    } else {
+                        mCenterPaint.setAlpha(0x80);
+                    }
+                    canvas.drawCircle(0, 0,
+                            CENTER_RADIUS + mCenterPaint.getStrokeWidth(),
+                            mCenterPaint);
+                    mCenterPaint.setStyle(Paint.Style.FILL);
+                    mCenterPaint.setColor(c);
+                }
+            }
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                setMeasuredDimension(CENTER_X*2, CENTER_Y*2);
+            }
+            private static final int CENTER_X = 100;
+            private static final int CENTER_Y = 100;
+            private static final int CENTER_RADIUS = 32;
+            private int floatToByte(float x) {
+                int n = java.lang.Math.round(x);
+                return n;
+            }
+            private int pinToByte(int n) {
+                if (n < 0) {
+                    n = 0;
+                } else if (n > 255) {
+                    n = 255;
+                }
+                return n;
+            }
+            private int ave(int s, int d, float p) {
+                return s + java.lang.Math.round(p * (d - s));
+            }
+            private int interpColor(int colors[], float unit) {
+                if (unit <= 0) {
+                    return colors[0];
+                }
+                if (unit >= 1) {
+                    return colors[colors.length - 1];
+                }
+                float p = unit * (colors.length - 1);
+                int i = (int)p;
+                p -= i;
+                // now p is just the fractional part [0...1) and i is the index
+                int c0 = colors[i];
+                int c1 = colors[i+1];
+                int a = ave(Color.alpha(c0), Color.alpha(c1), p);
+                int r = ave(Color.red(c0), Color.red(c1), p);
+                int g = ave(Color.green(c0), Color.green(c1), p);
+                int b = ave(Color.blue(c0), Color.blue(c1), p);
+                return Color.argb(a, r, g, b);
+            }
+            private int rotateColor(int color, float rad) {
+                float deg = rad * 180 / 3.1415927f;
+                int r = Color.red(color);
+                int g = Color.green(color);
+                int b = Color.blue(color);
+                ColorMatrix cm = new ColorMatrix();
+                ColorMatrix tmp = new ColorMatrix();
+                cm.setRGB2YUV();
+                tmp.setRotate(0, deg);
+                cm.postConcat(tmp);
+                tmp.setYUV2RGB();
+                cm.postConcat(tmp);
+                final float[] a = cm.getArray();
+                int ir = floatToByte(a[0] * r +  a[1] * g +  a[2] * b);
+                int ig = floatToByte(a[5] * r +  a[6] * g +  a[7] * b);
+                int ib = floatToByte(a[10] * r + a[11] * g + a[12] * b);
+                return Color.argb(Color.alpha(color), pinToByte(ir),
+                        pinToByte(ig), pinToByte(ib));
+            }
+            private static final float PI = 3.1415926f;
+            @Override
+            public boolean onTouchEvent(MotionEvent event) {
+                float x = event.getX() - CENTER_X;
+                float y = event.getY() - CENTER_Y;
+                boolean inCenter = java.lang.Math.sqrt(x*x + y*y) <= CENTER_RADIUS;
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        mTrackingCenter = inCenter;
+                        if (inCenter) {
+                            mHighlightCenter = true;
+                            invalidate();
+                            break;
+                        }
+                    case MotionEvent.ACTION_MOVE:
+                        if (mTrackingCenter) {
+                            if (mHighlightCenter != inCenter) {
+                                mHighlightCenter = inCenter;
+                                invalidate();
+                            }
+                        } else {
+                            float angle = (float)java.lang.Math.atan2(y, x);
+                            // need to turn angle [-PI ... PI] into unit [0....1]
+                            float unit = angle/(2*PI);
+                            if (unit < 0) {
+                                unit += 1;
+                            }
+                            mCenterPaint.setColor(interpColor(mColors, unit));
+                            invalidate();
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        if (mTrackingCenter) {
+                            if (inCenter) {
+                                mListener.colorChanged(mCenterPaint.getColor());
+                            }
+                            mTrackingCenter = false;    // so we draw w/o halo
+                            invalidate();
+                        }
+                        break;
+                }
+                return true;
+            }
+        }
+        public ColorPickerDialog(Context context,
+                                 OnColorChangedListener listener,
+                                 int initialColor) {
+            super(context);
+            mListener = listener;
+            mInitialColor = initialColor;
+        }
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            OnColorChangedListener l = new OnColorChangedListener() {
+                public void colorChanged(int color) {
+                    mListener.colorChanged(color);
+                    dismiss();
+                }
+            };
+            setContentView(new ColorPickerView(getContext(), l, mInitialColor));
+            setTitle(""Pick a Color"");
+        }
+    }","publicclasscolorpickerdialogextendsdialogpublicinterfaceoncolorchangedlistenervoidcolorchangedintcolorprivateoncolorchangedlistenermlistenerprivateintminitialcolorprivatestaticclasscolorpickerviewextendsviewprivatepaintmpaintprivatepaintmcenterpaintprivatefinalint[]mcolorsprivateoncolorchangedlistenermlistenercolorpickerviewcontextc,oncolorchangedlistenerl,intcolorsupercmlistener=lmcolors=newint[]0xffff0000,0xffff00ff,0xff0000ff,0xff00ffff,0xff00ff00,0xffffff00,0xffff0000shaders=newsweepgradient0,0,mcolors,nullmpaint=newpaintpaint.anti_alias_flagmpaint.setshadersmpaint.setstylepaint.style.strokempaint.setstrokewidth32mcenterpaint=newpaintpaint.anti_alias_flagmcenterpaint.setcolorcolormcenterpaint.setstrokewidth5privatebooleanmtrackingcenterprivatebooleanmhighlightcenter@overrideprotectedvoidondrawcanvascanvasfloatr=center_x-mpaint.getstrokewidth*0.5fcanvas.translatecenter_x,center_xcanvas.drawovalnewrectf-r,-r,r,r,mpaintcanvas.drawcircle0,0,center_radius,mcenterpaintifmtrackingcenterintc=mcenterpaint.getcolormcenterpaint.setstylepaint.style.strokeifmhighlightcentermcenterpaint.setalpha0xffelsemcenterpaint.setalpha0x80canvas.drawcircle0,0,center_radius+mcenterpaint.getstrokewidth,mcenterpaintmcenterpaint.setstylepaint.style.fillmcenterpaint.setcolorc@overrideprotectedvoidonmeasureintwidthmeasurespec,intheightmeasurespecsetmeasureddimensioncenter_x*2,center_y*2privatestaticfinalintcenter_x=100privatestaticfinalintcenter_y=100privatestaticfinalintcenter_radius=32privateintfloattobytefloatxintn=java.lang.math.roundxreturnnprivateintpintobyteintnifn<0n=0elseifn>255n=255returnnprivateintaveints,intd,floatpreturns+java.lang.math.roundp*d-sprivateintinterpcolorintcolors[],floatunitifunit<=0returncolors[0]ifunit>=1returncolors[colors.length-1]floatp=unit*colors.length-1inti=intpp-=iintc0=colors[i]intc1=colors[i+1]inta=avecolor.alphac0,color.alphac1,pintr=avecolor.redc0,color.redc1,pintg=avecolor.greenc0,color.greenc1,pintb=avecolor.bluec0,color.bluec1,preturncolor.argba,r,g,bprivateintrotatecolorintcolor,floatradfloatdeg=rad*180/3.1415927fintr=color.redcolorintg=color.greencolorintb=color.bluecolorcolormatrixcm=newcolormatrixcolormatrixtmp=newcolormatrixcm.setrgb2yuvtmp.setrotate0,degcm.postconcattmptmp.setyuv2rgbcm.postconcattmpfinalfloat[]a=cm.getarrayintir=floattobytea[0]*r+a[1]*g+a[2]*bintig=floattobytea[5]*r+a[6]*g+a[7]*bintib=floattobytea[10]*r+a[11]*g+a[12]*breturncolor.argbcolor.alphacolor,pintobyteir,pintobyteig,pintobyteibprivatestaticfinalfloatpi=3.1415926f@overridepublicbooleanontoucheventmotioneventeventfloatx=event.getx-center_xfloaty=event.gety-center_ybooleanincenter=java.lang.math.sqrtx*x+y*y<=center_radiusswitchevent.getactioncasemotionevent.action_down:mtrackingcenter=incenterifincentermhighlightcenter=trueinvalidatebreakcasemotionevent.action_move:ifmtrackingcenterifmhighlightcenter!=incentermhighlightcenter=incenterinvalidateelsefloatangle=floatjava.lang.math.atan2y,xfloatunit=angle/2*piifunit<0unit+=1mcenterpaint.setcolorinterpcolormcolors,unitinvalidatebreakcasemotionevent.action_up:ifmtrackingcenterifincentermlistener.colorchangedmcenterpaint.getcolormtrackingcenter=falseinvalidatebreakreturntruepubliccolorpickerdialogcontextcontext,oncolorchangedlistenerlistener,intinitialcolorsupercontextmlistener=listenerminitialcolor=initialcolor@overrideprotectedvoidoncreatebundlesavedinstancestatesuper.oncreatesavedinstancestateoncolorchangedlistenerl=newoncolorchangedlistenerpublicvoidcolorchangedintcolormlistener.colorchangedcolordismisssetcontentviewnewcolorpickerviewgetcontext,l,minitialcolorsettitle""pickacolor"""
+genious7/FanFictionReader,fanfictionReader/src/main/java/com/spicymango/fanfictionreader/menu/mainmenu/MainActivity.java,"if (!isTaskRoot()) {
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        if (intent.hasCategory(Intent.CATEGORY_LAUNCHER) && action != null && action.equals(Intent.ACTION_MAIN)) {
+            finish();
+            return;
+        }
+    }",if!istaskrootintentintent=getintentstringaction=intent.getactionifintent.hascategoryintent.category_launcher&&action!=null&&action.equalsintent.action_mainfinishreturn
+imartinez/SpaceMaterial,app/src/main/java/imartinez/com/spacematerial/isslocation/IssLocationFragment.java,"public  String getDateCurrentTimeZone(long timestamp) {
+    		try{
+    			Calendar calendar = Calendar.getInstance();
+    			TimeZone tz = TimeZone.getDefault();
+    			calendar.setTimeInMillis(timestamp * 1000);
+    			calendar.add(Calendar.MILLISECOND, tz.getOffset(calendar.getTimeInMillis()));
+    			SimpleDateFormat sdf = new SimpleDateFormat(""yyyy-MM-dd HH:mm:ss"");
+    			Date currenTimeZone = (Date) calendar.getTime();
+    			return sdf.format(currenTimeZone);
+    		}catch (Exception e) {
+    		}
+    		return """";
+    	}","publicstringgetdatecurrenttimezonelongtimestamptrycalendarcalendar=calendar.getinstancetimezonetz=timezone.getdefaultcalendar.settimeinmillistimestamp*1000calendar.addcalendar.millisecond,tz.getoffsetcalendar.gettimeinmillissimpledateformatsdf=newsimpledateformat""yyyy-mm-ddhh:mm:ss""datecurrentimezone=datecalendar.gettimereturnsdf.formatcurrentimezonecatchexceptionereturn"""""
+SamKnows/skandroid-core,libcore/src/com/samknows/measurement/net/SubmitTestResultsAnonymousAction.java,"StringBuilder newString = new StringBuilder(myString.length());
+    for (int offset = 0; offset < myString.length();)
+    {
+        int codePoint = myString.codePointAt(offset);
+        offset += Character.charCount(codePoint);
+        // Replace invisible control characters and unused code points
+        switch (Character.getType(codePoint))
+        {
+            case Character.CONTROL:     // \p{Cc}
+            case Character.FORMAT:      // \p{Cf}
+            case Character.PRIVATE_USE: // \p{Co}
+            case Character.SURROGATE:   // \p{Cs}
+            case Character.UNASSIGNED:  // \p{Cn}
+                newString.append('?');
+                break;
+            default:
+                newString.append(Character.toChars(codePoint));
+                break;
+        }
+    }",stringbuildernewstring=newstringbuildermystring.lengthforintoffset=0offset<mystring.lengthintcodepoint=mystring.codepointatoffsetoffset+=character.charcountcodepointswitchcharacter.gettypecodepointcasecharacter.control:casecharacter.format:casecharacter.private_use:casecharacter.surrogate:casecharacter.unassigned:newstring.append'?'breakdefault:newstring.appendcharacter.tocharscodepointbreak

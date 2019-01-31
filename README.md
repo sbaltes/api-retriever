@@ -186,7 +186,7 @@ The final configuration to retrieve the licenses for a list of GitHub repositori
 
 Execution with sample data:
 
-    python3 api-retriever.py -i -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
+    python3 api-retriever.py -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
 
 The resulting CSV file would look like this:
 
@@ -234,7 +234,7 @@ We don't need an API key to retrieve files from GitHub, we can just use their ra
 
 Execution with sample data:
 
-    python3 api-retriever.py -i -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
+    python3 api-retriever.py -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
 
 The only notable difference to the previous example is the first output parameter:
 
@@ -357,13 +357,19 @@ The callback `apply_paper_length_filter` filters papers according to the configu
 
 The callback `unescape_html` unescapes HTML characters in paper titles.
 
-## Example 4: Airbnb
+## Example 4: Retrieve information about Airbnb hosts and listings
 
 A configuration file that can be used to retrieve information about Airbnb hosts can be found [here](config/airbnb_host___data.json):
 
-    python3 api-retriever.py -i -i input/airbnb_hosts.csv -o output -c config/airbnb_host___data.json
+    python3 api-retriever.py -i input/airbnb_hosts.csv -o output -c config/airbnb_host___data.json
 
 A configuration file that can be used to retrieve information about Airbnb listings can be found [here](config/airbnb_listing___data.json):
 
     python3 api-retriever.py -i input/airbnb_listings.csv -o output -c config/airbnb_listing___data.json
+
+## Example 5: Searching for a code snippet in GitHub commits
+
+A configuration file that uses chained requests to search for a provided code snippest in the commit log of a GitHub repo can be found [here](config/gh_repo_path_codeblock___commits.json):
+
+    python3 api-retriever.py -i input/gh_snippet_commits.csv -o output -c config/gh_repo_path_codeblock___commits.json
 
