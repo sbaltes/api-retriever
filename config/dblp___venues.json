@@ -3,10 +3,7 @@
   "input_parameters": ["dblp_identifier", "min_length"],
   "ignore_input_duplicates": false,
   "uri_template": "https://dblp.org/search/publ/api?q=toc%3Adb/{dblp_identifier}.bht%3A&format=json&h=1000",
-  "api_keys": [
-    "", // add API key here
-    "" // add search engine id here
-  ],
+  "api_keys": [], // no API key needed
   "headers": {},
   "delay": [40, 1000],
   "pre_request_callbacks": [],

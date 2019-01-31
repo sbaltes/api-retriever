@@ -1,0 +1,4 @@
+repo_name,path,branch
+sbaltes/api-retriever,retriever/entity.py,master
+sbaltes/git-log-extractor,clone_projects.sh,master
+sotorrent/so-posthistory-extractor,src/de/unitrier/st/soposthistory/blocks/PostBlockVersion.java,master

@@ -1,13 +1,15 @@
-/* Configuration for Airbnb hosts. */
+/* Retrieve information about Airbnb hosts. */
 {
-  "name": "airbnb_host___data",
   "input_parameters": ["host_id"],
   "ignore_input_duplicates": true,
-  "uri_template": "https://api.airbnb.com/v2/users/{host_id}?client_id={api_key}&_format=v1_legacy_show",
+  "uri_template": "https://api.airbnb.com/v2/users/{host_id}?client_id={api_key_1}&_format=v1_legacy_show",
+  "api_keys": [
+    "" // add Airbnb API key here (see https://stackoverflow.com/a/42615630)
+  ],
   "headers": {},
-  "api_key": "", // add API key here
   "delay": [40, 1000],
   "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
   "output_parameter_mapping": {
     "first_name": ["user", "first_name"],
     "smart_name": ["user", "smart_name"],
@@ -31,7 +33,8 @@
     "total_listings_count": ["user", "total_listings_count"],
     "work": ["user", "work"]
   },
-  "apply_output_filter": true,
   "post_request_callbacks": [],
+  "post_request_callback_filter": false,
+  "flatten_output": false,
   "chained_request": {}
 }

@@ -3,7 +3,7 @@
   "input_parameters": ["repo_name"],
   "ignore_input_duplicates": true,
   "uri_template": "https://api.github.com/repos/{repo_name}?access_token={api_key_1}",
-  "api_keys": [""],  // add API key here
+  "api_keys": [""],  // add GitHub access token here
   "headers": {},
   "delay": [100, 2000],
   "pre_request_callbacks": [],

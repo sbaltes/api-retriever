@@ -28,8 +28,6 @@ __pycache__/
 ########
 # Misc #
 ########
-#config/
-input/
 output/
 *.log
 env/

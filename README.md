@@ -184,6 +184,10 @@ The final configuration to retrieve the licenses for a list of GitHub repositori
       "chained_request": {}
     }
 
+Execution with sample data:
+
+    python3 api-retriever.py -i -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
+
 The resulting CSV file would look like this:
 
 | repo_name                          | license    |
@@ -227,6 +231,10 @@ We don't need an API key to retrieve files from GitHub, we can just use their ra
       "flatten_output": false,
       "chained_request": {}
     }
+
+Execution with sample data:
+
+    python3 api-retriever.py -i -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
 
 The only notable difference to the previous example is the first output parameter:
 
@@ -281,10 +289,7 @@ We don't need an API key to retrieve files from DBLP, we can just use their sear
       "input_parameters": ["dblp_identifier", "min_length"],
       "ignore_input_duplicates": false,
       "uri_template": "https://dblp.org/search/publ/api?q=toc%3Adb/{dblp_identifier}.bht%3A&format=json&h=1000",
-      "api_keys": [
-        "", // add API key here
-        "" // add search engine id here
-      ],
+      "api_keys": [],
       "headers": {},
       "delay": [40, 1000],
       "pre_request_callbacks": [],
@@ -306,6 +311,10 @@ We don't need an API key to retrieve files from DBLP, we can just use their sear
       "flatten_output": true,
       "chained_request": {}
     }
+
+Execution with sample data:
+
+    python3 api-retriever.py -i input/dblp_venues.csv -o output -c config/dblp___venues.json
 
 One aspect that is new in this example is the list matching operator (`*`) in the output paramter mapping.
 As mentioned above, the right-hand side of the mapping refers to a path in the JSON response.
@@ -347,3 +356,9 @@ The callback `add_paper_length` calculates the paper length based on the provide
 The callback `apply_paper_length_filter` filters papers according to the configured minimal paper length.
 
 The callback `unescape_html` unescapes HTML characters in paper titles.
+
+## Example 4: Airbnb
+
+A configuration file that can be used to retrieve information about Airbnb hosts can be found [here](config/airbnb_host___data.json):
+
+    python3 api-retriever.py -i -i input/airbnb_hosts.csv -o output -c config/airbnb_host___data.json
