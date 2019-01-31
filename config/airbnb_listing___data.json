@@ -1,14 +1,16 @@
-/* Configuration for Airbnb listings. */
+/* Retrieve information about Airbnb listings. */
 {
-  "name": "airbnb_host_listing___data",
   "input_parameters": ["listing_id", "host_id"],
   "ignore_input_duplicates": true,
-  "uri_template": "https://api.airbnb.com/v2/listings/{listing_id}?client_id={api_key}&_format=v1_legacy_show",
+  "uri_template": "https://api.airbnb.com/v2/listings/{listing_id}?client_id={api_key_1}&_format=v1_legacy_show",
+  "api_keys": [
+    "" // add Airbnb API key here (see https://stackoverflow.com/a/42615630)
+  ],
   "headers": {},
-  "api_key": "", // add API key here
   "delay": [40, 1000],
   "pre_request_callbacks": [],
-  "output_parameter_mapping": {
+  "pre_request_callback_filter": false,
+"output_parameter_mapping": {
     "host_id": ["listing", "user_id"],
     "city": ["listing", "city"],
     "country": ["listing", "country"],
@@ -106,7 +108,8 @@
     "toto_opt_in": ["listing", "toto_opt_in"],
     "wireless_info": ["listing", "wireless_info"]
   },
-  "apply_output_filter": true,
   "post_request_callbacks": [],
+  "post_request_callback_filter": false,
+  "flatten_output": false,
   "chained_request": {}
 }

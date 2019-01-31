@@ -362,3 +362,8 @@ The callback `unescape_html` unescapes HTML characters in paper titles.
 A configuration file that can be used to retrieve information about Airbnb hosts can be found [here](config/airbnb_host___data.json):
 
     python3 api-retriever.py -i -i input/airbnb_hosts.csv -o output -c config/airbnb_host___data.json
+
+A configuration file that can be used to retrieve information about Airbnb listings can be found [here](config/airbnb_listing___data.json):
+
+    python3 api-retriever.py -i input/airbnb_listings.csv -o output -c config/airbnb_listing___data.json
+
