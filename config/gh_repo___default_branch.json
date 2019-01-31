@@ -1,17 +1,18 @@
-/* Retrieve default branch (usually "master") for a list of repos. */
+/* Retrieve default branch (usually "master") for a list of GitHub repos. */
 {
-  "name": "gh_repo___default_branch",
   "input_parameters": ["repo_name"],
   "ignore_input_duplicates": true,
-  "uri_template": "https://api.github.com/repos/{repo_name}?access_token={api_key}",
+  "uri_template": "https://api.github.com/repos/{repo_name}?access_token={api_key_1}",
+  "api_keys": [""],  // add GitHub access token here
   "headers": {},
-  "api_key": "",  // add API key here
-  "delay": [40, 1000],
+  "delay": [100, 1000],
   "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
   "output_parameter_mapping": {
     "default_branch": ["default_branch"]
   },
-  "apply_output_filter": true,
   "post_request_callbacks": [],
+  "post_request_callback_filter": false,
+  "flatten_output": false,
   "chained_request": {}
 }

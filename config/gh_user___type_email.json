@@ -1,19 +1,21 @@
-/* Check if repos are forks. */
+/* Check type of GitHub repos and retrieve email addresses. */
 {
-  "name": "gh_user___type_email",
-  "input_parameters": ["user_id", "user_name"],
+  "input_parameters": ["user_name"],
   "ignore_input_duplicates": true,
-  "uri_template": "https://api.github.com/users/{user_name}?access_token={api_key}",
+  "uri_template": "https://api.github.com/users/{user_name}?access_token={api_key_1}",
+  "api_keys": [
+    "" // add GitHub access token here
+  ],
   "headers": {},
-  "api_key": "",  // add API key here
   "delay": [40, 1000],
   "pre_request_callbacks": [],
+  "pre_request_callback_filter": true,
   "output_parameter_mapping": {
     "type": ["type"],
     "email": ["email"]
   },
-  "apply_output_filter": false,
   "post_request_callbacks": [],
+  "post_request_callback_filter": false,
+  "flatten_output": false,
   "chained_request": {}
 }
-

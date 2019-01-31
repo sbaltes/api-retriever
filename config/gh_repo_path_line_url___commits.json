@@ -1,13 +1,15 @@
-/* Retrieve GH commits for a certain path and then retrieve the file diffs with the next request. */
+/* Retrieve GitHub commits adding a certain line with a link. */
 {
-  "name": "gh_repo_path_line_url___commits",
   "input_parameters": ["id", "url", "line", "repo_name", "path"],
   "ignore_input_duplicates": false,
-  "uri_template": "https://api.github.com/repos/{repo_name}/commits?path={path}&access_token={api_key}",
+  "uri_template": "https://api.github.com/repos/{repo_name}/commits?path={path}&access_token={api_key_1}",
+  "api_keys": [
+    "" // add GitHub access token here
+  ],
   "headers": {},
-  "api_key": "",  // add API key here
   "delay": [40, 1000],
-  "pre_request_callbacks": [],
+  "pre_request_callbacks": ["validate_code_block_normalization"],
+  "pre_request_callback_filter": true,
   "output_parameter_mapping": {
     "commits": ["*", {
         "commit_sha": ["sha"],
@@ -15,13 +17,14 @@
       }
     ]
   },
-  "apply_output_filter": true,
   "post_request_callbacks": ["sort_commits"],
+  "post_request_callback_filter": true,
+  "flatten_output": false,
   "chained_request": {
     "name": "gh_repo_path_line_url_commit___files",
     "input_parameters": {
       "input_parameters": ["id", "url", "line", "repo_name", "path"],
-      "output_parameters": ["commits._"]
+      "output_parameters": ["commits._"] // flatten operator
     }
   }
 }

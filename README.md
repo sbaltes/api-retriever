@@ -186,7 +186,7 @@ The final configuration to retrieve the licenses for a list of GitHub repositori
 
 Execution with sample data:
 
-    python3 api-retriever.py -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
+    python3 api-retriever.py -i input/gh_repos.csv -o output -c config/gh_repo___license.json
 
 The resulting CSV file would look like this:
 
@@ -367,9 +367,35 @@ A configuration file that can be used to retrieve information about Airbnb listi
 
     python3 api-retriever.py -i input/airbnb_listings.csv -o output -c config/airbnb_listing___data.json
 
-## Example 5: Searching for a code snippet in GitHub commits
+## Example 5: Further GitHub examples
 
-A configuration file that uses chained requests to search for a provided code snippest in the commit log of a GitHub repo can be found [here](config/gh_repo_path_codeblock___commits.json):
+### Searching for a code snippet in GitHub commits
+
+A configuration file that uses chained requests to search for a provided code snippet in the commit log of a GitHub repo can be found [here](config/gh_repo_path_codeblock___commits.json):
 
     python3 api-retriever.py -i input/gh_snippet_commits.csv -o output -c config/gh_repo_path_codeblock___commits.json
+
+### Retrieving the default branch of GitHub repositories
+
+Retrieve default branch for GitHub repos ([config](config/gh_repo___default_branch.json)):
+
+    python3 api-retriever.py -i input/gh_repos.csv -o output -c config/gh_repo___default_branch.json
+
+### Checking whether GitHub repositories are forks
+
+Check whether GitHub repos are forks ([config](config/gh_repo___is_fork.json)):
+
+    python3 api-retriever.py -i input/gh_repos.csv -o output -c config/gh_repo___is_fork.json
+
+### Retrieving specific files from GitHub
+
+Retrieve a list of files from GitHub repos ([config](config/gh_repo_path_branch___file.json)):
+
+    python3 api-retriever.py -i input/gh_repos_path_branch.csv -o output -c config/gh_repo_path_branch___file.json
+
+### Check GitHub user account type
+
+Retrieve the account type and email address (if available) for GitHub users ([config](config/gh_user___type_email.json)):
+
+    python3 api-retriever.py -i input/gh_users.csv -o output -c config/gh_user___type_email.json
 

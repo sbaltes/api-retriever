@@ -1,4 +1,4 @@
 repo_name,path,branch
 sbaltes/api-retriever,retriever/entity.py,master
-sbaltes/git-log-extractor,clone_projects.sh,master
-sotorrent/so-posthistory-extractor,src/de/unitrier/st/soposthistory/blocks/PostBlockVersion.java,master
+sbaltes/git-log-extractor,1_clone_projects.sh,master
+sotorrent/so-posthistory-extractor,src/org/sotorrent/posthistoryextractor/blocks/PostBlockVersion.java,master
