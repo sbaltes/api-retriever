@@ -217,7 +217,7 @@ def add_paper_length(entity):
 
 def apply_paper_length_filter(entity):
     """
-    Only select papers with at least 5 pages.
+    Only select papers above the configure page length threshold.
     (exclude editorials, extended abstracts of journal first papers, etc.)
     :param entity: An entity with DBLP papers.
     :return: None

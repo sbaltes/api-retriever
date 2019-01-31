@@ -286,7 +286,7 @@ We don't need an API key to retrieve files from DBLP, we can just use their sear
         "" // add search engine id here
       ],
       "headers": {},
-      "delay": [100, 1000],
+      "delay": [40, 1000],
       "pre_request_callbacks": [],
       "pre_request_callback_filter": false,
       "output_parameter_mapping": {
@@ -306,6 +306,39 @@ We don't need an API key to retrieve files from DBLP, we can just use their sear
       "flatten_output": true,
       "chained_request": {}
     }
+
+One aspect that is new in this example is the list matching operator (`*`) in the output paramter mapping.
+As mentioned above, the right-hand side of the mapping refers to a path in the JSON response.
+In this example, the path `["result", "hits", "hit"]` identifies a list (JSON array) containing multiple JSON objects:
+
+[![dblp-identifier](doc/dblp-hits-list-matching.png "DBLP Hits ICSE 2014")](https://dblp.org/search/publ/api?q=toc%3Adb/conf/icse/icse2014.bht%3A&format=json&h=1000)
+
+The `*` operator matches all those objects.
+The following nested mapping selects only certain properties of the objects in the list:
+
+    {
+        "venue": ["info", "venue"],
+        "year": ["info", "year"],
+        // ...
+    }
+
+Without the `flatten_output` parameter set to `true`, the resulting list would look like this:
+    
+| dblp_identifier    | min_length | papers                                                                           |
+|--------------------|------------|----------------------------------------------------------------------------------|
+| conf/icse/icse2014 | 8          | [OrderedDict([('venue', 'ICSE'), ('year', '2014'), ('title',... |
+| conf/icse/icse2016 | 8          | [OrderedDict([('venue', 'ICSE'), ('year', '2016'), ('title'... |
+| conf/icse/icse2017 | 8          | [OrderedDict([('venue', 'ICSE'), ('year', '2017'), ('title'... |
+
+In the flattened result, each object from the list is stored in a separate row:
+
+| dblp_identifier    | min_length | venue | year | title                                                                                       | authors                                                     | pages   | doi                     | electronic_edition                      | dblp_url                                 | length |
+|--------------------|------------|-------|------|---------------------------------------------------------------------------------------------|-------------------------------------------------------------|---------|-------------------------|-----------------------------------------|------------------------------------------|--------|
+| conf/icse/icse2014 | 8          | ICSE  | 2014 | Mining billions of AST nodes to study actual and potential usage of Java language features. | Robert Dyer; Hridesh Rajan; Hoan Anh Nguyen; Tien N. Nguyen | 779-790 | 10.1145/2568225.2568295 | https://doi.org/10.1145/2568225.2568295 | https://dblp.org/rec/conf/icse/0001RNN14 | 12     |
+| conf/icse/icse2014 | 8          | ICSE  | 2014 | Unleashing concurrency for irregular data structures.                                       | Peng Liu; Charles Zhang                                     | 480-490 | 10.1145/2568225.2568277 | https://doi.org/10.1145/2568225.2568277 | https://dblp.org/rec/conf/icse/0010Z14   | 11     |
+| conf/icse/icse2014 | 8          | ICSE  | 2014 | Integrating adaptive user interface capabilities in enterprise applications.                | Pierre A. Akiki; Arosha K. Bandara; Yijun Yu                | 712-723 | 10.1145/2568225.2568230 | https://doi.org/10.1145/2568225.2568230 | https://dblp.org/rec/conf/icse/AkikiBY14 | 12     |
+| ...                | ...        | ...   | ...  | ...                                                                                         | ...                                                         | ...     | ...                     | ...                                     | ...                                      | ...    |
+
 
 The callback `flatten_dblp_authors` removes the disambiguation numbering that DBLP uses and joins all authors into a semicolon-separated list.
 

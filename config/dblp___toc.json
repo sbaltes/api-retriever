@@ -8,7 +8,7 @@
     "" // add search engine id here
   ],
   "headers": {},
-  "delay": [100, 1000],
+  "delay": [40, 1000],
   "pre_request_callbacks": [],
   "pre_request_callback_filter": false,
   "output_parameter_mapping": {
