@@ -316,7 +316,7 @@ Execution with sample data:
 
     python3 api-retriever.py -i input/dblp_venues.csv -o output -c config/dblp___venues.json
 
-One aspect that is new in this example is the list matching operator (`*`) in the output paramter mapping.
+One aspect that is new in this example is the list matching operator (`*`) in the output parameter mapping.
 As mentioned above, the right-hand side of the mapping refers to a path in the JSON response.
 In this example, the path `["result", "hits", "hit"]` identifies a list (JSON array) containing multiple JSON objects:
 
