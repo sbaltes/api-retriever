@@ -1,9 +1,13 @@
 # api-retriever
 
+[![logo](doc/logo_small.png "api-retriever logo")](doc/logo.png)
+
 Retrieve and filter data from public APIs and export it to CSV files.
 Examples for supported APIs include the [GitHub API](https://developer.github.com/v3/), the [Stack Exchange API](https://api.stackexchange.com/docs), the [Google Custom Search API](https://developers.google.com/custom-search/json-api/v1/using_rest), the [unofficial Airbnb API](https://web.archive.org/web/20170519054521/http://www.airbnbapi.org/), and the [DBLP API](https://dblp.uni-trier.de/faq/13501473).
 
 [![DOI](https://zenodo.org/badge/87788115.svg)](https://zenodo.org/badge/latestdoi/87788115)
+
+<sub>Image sources: [Dog](https://pixabay.com/de/hund-kontur-schatten-2103628/), [Airbnb](https://commons.wikimedia.org/wiki/File:Airbnb_Logo_B%C3%A9lo.svg), [Stack Overflow](https://en.wikipedia.org/wiki/Stack_Overflow#/media/File:Stack_Overflow_logo.svg), [GitHub](https://de.wikipedia.org/wiki/GitHub#/media/File:GitHub_logo_2013.svg)</sub> 
 
 # Setup
 
@@ -99,7 +103,7 @@ In the URI template, the API keys can then be identified using their position in
       "headers": {},
       // ...
     }
- 
+
 It is also possible to specify custom header fields.
 Retrieving the license of a repository, for example, used to be only available as an [API preview](https://developer.github.com/v3/previews/).
 In that case, a custom header for the request can be configured as follows:
@@ -239,7 +243,7 @@ Execution with sample data:
 The only notable difference to the previous example is the first output parameter:
 
     "content": ["<raw_response>"]
-    
+
 Using the mapping `<raw_response>`, we can configure the api-retriever to save the complete raw response instead of first parsing it as JSON content and then applying the configured filter.
 However, when `<raw_response>` is configured, a destination path for each retrieved file is needed.
 The api-retriever searches for a `destination` parameter in the output parameter mapping and joins the configured columns from the input data.
