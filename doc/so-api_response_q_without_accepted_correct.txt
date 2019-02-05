@@ -1,0 +1,38 @@
+{
+
+    "items": [
+        {
+            "tags": [
+                "r",
+                "ggplot2"
+            ],
+            "owner": {
+                "reputation": 3590,
+                "user_id": 1060349,
+                "user_type": "registered",
+                "accept_rate": 84,
+                "profile_image": "https://i.stack.imgur.com/DOacL.jpg?s=128&g=1",
+                "display_name": "toto_tico",
+                "link": "http://stackoverflow.com/users/1060349/toto-tico"
+            },
+            "comment_count": 0,
+            "is_answered": false,
+            "view_count": 4,
+            "favorite_count": 0,
+            "down_vote_count": 0,
+            "up_vote_count": 0,
+            "answer_count": 0,
+            "score": 0,
+            "last_activity_date": 1468948116,
+            "creation_date": 1468948116,
+            "question_id": 38464580,
+            "share_link": "http://stackoverflow.com/q/38464580",
+            "link": "http://stackoverflow.com/questions/38464580/increase-space-between-axis-title-and-axis-text-in-ggplot2-version-2-1-0",
+            "title": "Increase space between axis.title and axis.text in ggplot2 (version &gt;= 2.1.0)"
+        }
+    ],
+    "has_more": false,
+    "quota_max": 300,
+    "quota_remaining": 194
+
+}

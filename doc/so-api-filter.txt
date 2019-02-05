@@ -1,0 +1,82 @@
+Create Custom Filter to include further fields for answer and question:
+
+https://api.stackexchange.com/2.2/filters/create?include=answer.comment_count;answer.down_vote_count;answer.last_editor;answer.link;answer.share_link;answer.tags;answer.title;answer.up_vote_count;question.comment_count;question.down_vote_count;question.favorite_count;question.last_editor;question.share_link;question.up_vote_count&exclude=answer.community_owned_date;question.bounty_amount;question.bounty_closes_date;question.community_owned_date;question.migrated_from;question.migrated_to&unsafe=false
+
+include:
+answer.comment_count;answer.down_vote_count;answer.last_editor;answer.link;answer.share_link;answer.tags;
+answer.title;answer.up_vote_count;question.comment_count;question.down_vote_count;
+question.favorite_count;question.last_editor;question.share_link;question.up_vote_count
+
+exclude:
+answer.community_owned_date;question.bounty_amount;question.bounty_closes_date;question.community_owned_date;question.migrated_from;question.migrated_to
+
+Example for Answer:
+
+https://api.stackexchange.com/2.2/answers/3758880?site=stackoverflow&filter=!5127-ZjqKCWnG6S3gHOBQF*YuA_JF7SFY4RdQF
+
+Example for Question:
+
+https://api.stackexchange.com/2.2/questions/13786607?site=stackoverflow&filter=!5127-ZjqKCWnG6S3gHOBQF*YuA_JF7SFY4RdQF
+
+Example for Question with accepted answer:
+
+https://api.stackexchange.com/2.2/questions/38464580?site=stackoverflow&filter=!5127-ZjqKCWnG6S3gHOBQF*YuA_JF7SFY4RdQF
+
+
+{
+  "items": [
+    {
+      "included_fields": [
+...
+        "answer.answer_id",
+        "answer.comment_count",
+        "answer.creation_date",
+        "answer.down_vote_count",
+        "answer.is_accepted",
+        "answer.last_activity_date",
+        "answer.last_edit_date",
+        "answer.last_editor",
+        "answer.link",
+        "answer.locked_date",
+        "answer.owner",
+        "answer.question_id",
+        "answer.score",
+        "answer.share_link",
+        "answer.tags",
+        "answer.title",
+        "answer.up_vote_count",
+...
+        "question.accepted_answer_id",
+        "question.answer_count",
+        "question.closed_date",
+        "question.closed_reason",
+        "question.comment_count",
+        "question.creation_date",
+        "question.down_vote_count",
+        "question.favorite_count",
+        "question.is_answered",
+        "question.last_activity_date",
+        "question.last_edit_date",
+        "question.last_editor",
+        "question.link",
+        "question.locked_date",
+        "question.owner",
+        "question.protected_date",
+        "question.question_id",
+        "question.score",
+        "question.share_link",
+        "question.tags",
+        "question.title",
+        "question.up_vote_count",
+        "question.view_count",
+...
+      ],
+      "filter_type": "safe",
+      "filter": "!5127-ZjqKCWnG6S3gHOBQF*YuA_JF7SFY4RdQF"
+    }
+  ],
+  "has_more": false,
+  "quota_max": 10000,
+  "quota_remaining": 9926
+}
+

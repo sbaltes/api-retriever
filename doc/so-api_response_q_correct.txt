@@ -1,0 +1,50 @@
+{
+
+    "items": [
+        {
+            "tags": [
+                "java",
+                "xml",
+                "dom",
+                "computer-science"
+            ],
+            "owner": {
+                "reputation": 1033,
+                "user_id": 1776310,
+                "user_type": "registered",
+                "accept_rate": 76,
+                "profile_image": "https://i.stack.imgur.com/7QPAd.jpg?s=128&g=1",
+                "display_name": "Apple Grinder",
+                "link": "http://stackoverflow.com/users/1776310/apple-grinder"
+            },
+            "last_editor": {
+                "reputation": 550,
+                "user_id": 2279422,
+                "user_type": "registered",
+                "profile_image": "https://i.stack.imgur.com/djdZx.jpg?s=128&g=1",
+                "display_name": "Xz_awan",
+                "link": "http://stackoverflow.com/users/2279422/xz-awan"
+            },
+            "comment_count": 7,
+            "is_answered": true,
+            "view_count": 71759,
+            "favorite_count": 37,
+            "down_vote_count": 0,
+            "up_vote_count": 133,
+            "accepted_answer_id": 13787629,
+            "answer_count": 3,
+            "score": 133,
+            "last_activity_date": 1467185569,
+            "creation_date": 1355048512,
+            "last_edit_date": 1433715033,
+            "question_id": 13786607,
+            "share_link": "http://stackoverflow.com/q/13786607",
+            "link": "http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work",
+            "title": "Normalization in DOM parsing with java - how does it work?"
+        }
+    ],
+    "has_more": false,
+    "quota_max": 300,
+    "quota_remaining": 196
+
+}
