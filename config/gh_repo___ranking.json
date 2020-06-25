@@ -1,0 +1,36 @@
+/* Retrieve ranking of GitHub projects according to stars. */
+{
+  "input_parameters": ["stars"],
+  "ignore_input_duplicates": true,
+  "uri_template": "https://api.github.com/search/repositories?access_token={api_key_1}&q=stars%3A>{stars}&sort=stars&order=desc&per_page=100&page={page|1;11;1}",
+  "api_keys": [""],  // add GitHub access token here
+  "headers": {},
+  "delay": [100, 1000],
+  "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
+  "output_parameter_mapping": {
+    "repos": ["items", "*", {
+      "full_name": ["full_name"],
+      "stargazers_count": ["stargazers_count"],
+      "forks_count": ["forks_count"],
+      "size": ["size"],
+      "open_issues_count": ["open_issues_count"],
+      "language": ["language"],
+      "url": ["html_url"],
+      "created_at": ["created_at"],
+      "updated_at": ["updated_at"],
+      "is_fork": ["fork"],
+      "is_private": ["private"],
+      "is_archived": ["archived"],
+      "is_disabled": ["disabled"],
+      "has_issues": ["has_issues"],
+      "has_wiki": ["has_wiki"],
+      "has_projects": ["has_projects"],
+      "has_downloads": ["has_downloads"]
+    }]
+  },
+  "post_request_callbacks": [],
+  "post_request_callback_filter": false,
+  "flatten_output": true,
+  "chained_request": {}
+}

@@ -432,3 +432,11 @@ Retrieve the account type and email address (if available) for GitHub users ([co
 Retrieve the email address that a certain GitHub user used when committing to a certain GitHub repository ([config](config/gh_user_repo___commit_email.json)):
 
     python3 api-retriever.py -i input/gh_users_repos.csv -o output -c config/gh_user_repo___commit_email.json
+
+### Retrieving top-rated GitHub repositories according to stars
+
+The input file defines the minimum number of stars, the top 1000 results are retrieved.
+
+    python3 api-retriever.py -i input/gh_stars.csv -o output -c config/gh_repo___ranking.json
+
+
