@@ -1,8 +1,9 @@
 /* Retrieve ranking of GitHub projects according to stars. */
 {
-  "input_parameters": ["min_stars"],
+  "input_parameters": ["min_stars", "max_stars"],
   "ignore_input_duplicates": true,
-  "uri_template": "https://api.github.com/search/repositories?access_token={api_key_1}&q=stars%3A>{min_stars}&sort=stars&order=desc&per_page=100&page={page|1;11;1}",
+  //"uri_template": "https://api.github.com/search/repositories?access_token={api_key_1}&q=stars%3A>{min_stars}&sort=stars&order=desc&per_page=100&page={page|1;11;1}",
+  "uri_template": "https://api.github.com/search/repositories?access_token={api_key_1}&q=stars%3A{min_stars}..{max_stars}&sort=stars&order=desc&per_page=100&page={page|1;11;1}",
   "api_keys": [""],  // add GitHub access token here
   "headers": {},
   "delay": [100, 1000],

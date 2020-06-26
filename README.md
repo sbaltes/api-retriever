@@ -435,8 +435,8 @@ Retrieve the email address that a certain GitHub user used when committing to a 
 
 ### Retrieving top-rated GitHub repositories according to stars
 
-The input file defines the minimum number of stars, the top 1000 results are retrieved.
+The input file defines the minimum and maximum number of stars, the top 1000 results within that range are retrieved.
+This is a limitation of the GitHub API.
 
-    python3 api-retriever.py -i input/gh_stars.csv -o output -c config/gh_repo___ranking.json
-
+    python3 api-retriever.py -i input/gh_search.csv -o output -c config/gh_repo___ranking.json
 
