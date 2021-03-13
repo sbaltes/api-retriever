@@ -115,56 +115,70 @@ class Entity(object):
                             self.configuration.delay_max)  # delay between requests in milliseconds
             time.sleep(delay / 1000)  # sleep for delay ms to prevent getting blocked
 
-            # retrieve data
-            if len(self.configuration.headers) > 0:
-                response = session.get(self.uri, headers=self.configuration.headers)
-            else:
-                response = session.get(self.uri)
-
-            if response.ok:
-                logger.info("Successfully retrieved data for entity " + str(self) + ".")
-
-                if self.configuration.raw_download:
-                    # raw download
-                    self.output_parameters[self.configuration.raw_parameter] = response.content
-                    # join path to destination file
-                    dest_file = ""
-                    for part in self.configuration.output_parameter_mapping["destination"]:
-                        if part not in self.input_parameters:
-                            raise IllegalConfigurationError("Destination parameter "
-                                                            + part
-                                                            + " not found in input parameters.")
-                        dest_file = os.path.join(dest_file, self.input_parameters[part])
-                    self.output_parameters["destination"] = dest_file
-                else:
-                    # JSON API call
-                    # deserialize JSON string
-                    json_response = json.loads(response.text)
-                    self.json_response = json_response
-                    # extract parameters according to parameter mapping
-                    self._extract_output_parameters(json_response)
-
-                # execute post_request_callbacks
-                for callback in self.configuration.post_request_callbacks:
-                    result = callback(self)
-                    # check if callback implements filter
-                    if isinstance(result, bool):
-                        if not result:
-                            logger.info("Entity removed because of filter callback " + str(callback) + ": " + str(self))
-                            return False
-
-                return True
-
-            else:
-                logger.error("Error " + str(response.status_code) + ": Could not retrieve data for entity " + str(self)
-                             + ". Response: " + str(response.content))
-                return False
+            # retrieve data and return flag indicating successful request
+            return self._retrieve_data(session, delay)
 
         except (gaierror,
                 ConnectionError,
                 MaxRetryError,
                 NewConnectionError):
             logger.error("An error occurred while retrieving data for entity  " + str(self) + ".")
+
+    def _retrieve_data(self, session, delay):
+        """
+        Retrieve data, handling "Too Many Requests" HTTP response ode
+        :param session: Session to use for the request(s).
+        :param delay: Delay until next request.
+        :return: True if response was processed successfully, False otherwise.
+        """
+
+        if len(self.configuration.headers) > 0:
+            response = session.get(self.uri, headers=self.configuration.headers)
+        else:
+            response = session.get(self.uri)
+
+        if response.ok:
+            logger.info("Successfully retrieved data for entity " + str(self) + ".")
+
+            if self.configuration.raw_download:
+                # raw download
+                self.output_parameters[self.configuration.raw_parameter] = response.content
+                # join path to destination file
+                dest_file = ""
+                for part in self.configuration.output_parameter_mapping["destination"]:
+                    if part not in self.input_parameters:
+                        raise IllegalConfigurationError("Destination parameter "
+                                                        + part
+                                                        + " not found in input parameters.")
+                    dest_file = os.path.join(dest_file, self.input_parameters[part])
+                self.output_parameters["destination"] = dest_file
+            else:
+                # JSON API call
+                # deserialize JSON string
+                json_response = json.loads(response.text)
+                self.json_response = json_response
+                # extract parameters according to parameter mapping
+                self._extract_output_parameters(json_response)
+
+            # execute post_request_callbacks
+            for callback in self.configuration.post_request_callbacks:
+                result = callback(self)
+                # check if callback implements filter
+                if isinstance(result, bool):
+                    if not result:
+                        logger.info("Entity removed because of filter callback " + str(callback) + ": " + str(self))
+                        return False
+
+            return True
+
+        elif response.status_code == 429: # "Too Many Requests"
+            time.sleep(2 * delay / 1000)  # sleep longer than before
+            return self._retrieve_data(session, 2 * delay)
+
+        else:
+            logger.error("Error " + str(response.status_code) + ": Could not retrieve data for entity " + str(self)
+                         + ". Response: " + str(response.content))
+            return False
 
     def _extract_output_parameters(self, json_response):
         """

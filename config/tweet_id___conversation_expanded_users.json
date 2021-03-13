@@ -1,0 +1,30 @@
+/* Retrieve conversations started with a particular tweet. */
+{
+  "input_parameters": ["tweet_id"],
+  "ignore_input_duplicates": true,
+  "uri_template": "https://api.twitter.com/2/tweets/search/all?query=conversation_id:{tweet_id}&since_id={tweet_id}&max_results=500&tweet.fields=id,author_id,in_reply_to_user_id&expansions=author_id,in_reply_to_user_id&user.fields=id,username,name,url,location,description,created_at,public_metrics,verified",
+  "api_keys": [],
+  "headers": {"Authorization": "Bearer <BEARER_TOKEN>"}, //TODO: replace <BEARER_TOKEN>
+  "delay": [100, 1000],
+  "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
+  "output_parameter_mapping": {
+    "users": ["includes", "users", "*", {
+      "id": ["id"],
+      "created_at": ["created_at"],
+      "username": ["username"],
+      "name": ["name"],
+      "description": ["description"],
+      "location": ["location"],
+      "website": ["url"],
+      "followers_count": ["public_metrics", "followers_count"],
+      "following_count":  ["public_metrics", "following_count"],
+      "listed_count": ["public_metrics", "listed_count"],
+      "tweet_count": ["public_metrics", "tweet_count"]
+    }]
+  },
+  "post_request_callbacks": ["normalize_whitespaces_users"],
+  "post_request_callback_filter": false,
+  "flatten_output": true,
+  "chained_request": {}
+}

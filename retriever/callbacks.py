@@ -230,3 +230,17 @@ def apply_paper_length_filter(entity):
 def unescape_html(entity):
     for paper in entity.output_parameters["papers"]:
         paper["title"] = html.unescape(paper["title"])
+
+
+def normalize_whitespaces_tweets(entity):
+    if not entity.output_parameters["tweets"]:
+        return
+    for tweet in entity.output_parameters["tweets"]:
+        tweet["text"] = re.sub("\\s+", " ", tweet["text"].strip())
+
+
+def normalize_whitespaces_users(entity):
+    if not entity.output_parameters["users"]:
+        return
+    for tweet in entity.output_parameters["users"]:
+        tweet["description"] = re.sub("\\s+", " ", tweet["description"].strip())
