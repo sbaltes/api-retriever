@@ -458,6 +458,7 @@ class EntityList(object):
                     **entity.output_parameters,
                     **element
                 }
+                flattened_entity.uri = entity.uri
                 flattened_entities.append(flattened_entity)
 
         # replace entities with flattened ones

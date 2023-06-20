@@ -58,7 +58,7 @@ class Entity(object):
 
         # set values for range variables
         for range_var_name in configuration.range_vars:
-            if not range_var_name in input_parameter_values:
+            if range_var_name not in input_parameter_values:
                 continue
             uri_variable_values[range_var_name] = input_parameter_values[range_var_name]
 
