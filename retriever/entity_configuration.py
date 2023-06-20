@@ -102,6 +102,7 @@ class EntityConfiguration(object):
                 # get name and input parameter mapping for chained request
                 self.chained_request_name = chained_request["name"]
                 self.chained_request_input_parameters = chained_request["input_parameters"]
+            self.log_uri = config_dict["log_uri"]
 
         except KeyError as e:
             raise IllegalConfigurationError("Reading configuration failed: Parameter " + str(e) + " not found.")
@@ -184,6 +185,9 @@ class EntityConfiguration(object):
                 if not self.chained_request_input_parameter_mapping[parameter] \
                         == other_config.chained_request_input_parameter_mapping[parameter]:
                     return False
+
+        if not self.log_queries == other_config.log_queries:
+            return False
 
         return True
 

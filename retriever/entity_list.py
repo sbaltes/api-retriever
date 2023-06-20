@@ -319,6 +319,9 @@ class EntityList(object):
             for parameter in parameters_added:
                 column_names.append(parameter)
 
+            if self.configuration.log_uri:
+                column_names.append("_uri")
+
             # write header of CSV file
             writer.writerow(column_names)
 
@@ -348,6 +351,8 @@ class EntityList(object):
                             row[column_name] = entity.output_parameters[column_name]
                         elif column_name in entity.input_parameters.keys():
                             row[column_name] = entity.input_parameters[column_name]
+                        if column_name == "_uri":
+                            row[column_name] = entity.uri
 
                     if len(row) == len(column_names):
                         writer.writerow(list(row.values()))
