@@ -1,19 +1,27 @@
 /* Retrieve specific files from GitHub. */
 {
-  "input_parameters": ["repo_name", "path", "branch"],
+  "input_parameters": ["query"],
   "ignore_input_duplicates": true,
-  "uri_template": "https://raw.githubusercontent.com/{repo_name}/{branch}/{path}",
-  "api_keys": [""],  // no API key needed
-  "headers": {},
-  "delay": [40, 1000],
+  "uri_template": "https://api.github.com/search/commits?q={query}&sort=indexed&order=desc&per_page=100&page={page|1;11;1}",
+  "api_keys": [],
+  "headers": {
+    "Accept": "application/vnd.github+json",
+    "Authorization": "Bearer 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",
+    "X-GitHub-Api-Version": "2022-11-28"
+  },
+  "delay": [100, 1000],
   "pre_request_callbacks": [],
   "pre_request_callback_filter": false,
   "output_parameter_mapping": {
-    "content": ["<raw_response>"],
-    "destination": []
+    "repos": ["items", "*", {
+      "url": ["url"],
+      "sha": ["sha"],
+      "commit_message":  ["commit", "message"]
+    }]
   },
-  "post_request_callbacks": ["set_destination_path"],
+  "post_request_callbacks": [],
   "post_request_callback_filter": false,
-  "flatten_output": false,
-  "chained_request": {}
+  "flatten_output": true,
+  "chained_request": {},
+  "log_uri": true
 }
