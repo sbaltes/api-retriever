@@ -1,4 +1,3 @@
-/* Retrieve specific files from GitHub. */
 {
   "input_parameters": ["query"],
   "ignore_input_duplicates": true,
@@ -6,7 +5,7 @@
   "api_keys": [],
   "headers": {
     "Accept": "application/vnd.github+json",
-    "Authorization": "Bearer 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",
+    "Authorization": "Bearer <GITHUB_ACCESS_TOKEN>",
     "X-GitHub-Api-Version": "2022-11-28"
   },
   "delay": [100, 1000],
