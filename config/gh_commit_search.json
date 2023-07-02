@@ -13,10 +13,18 @@
   "pre_request_callback_filter": false,
   "output_parameter_mapping": {
     "repos": ["items", "*", {
-      "url": ["url"],
+      "commit_date": ["commit", "committer", "date"],
+      "author_date": ["commit", "author", "date"],
+      "repo_name": ["repository", "full_name"],
+      "is_fork": ["repository", "fork"],
       "sha": ["sha"],
-      "commit_message":  ["commit", "message"],
-      "commit_date": ["commit", "committer", "date"]
+      "api_url": ["url"],
+      "html_url": ["html_url"],
+      "committer_name": ["commit", "committer", "name"],
+      "committer_email": ["commit", "committer", "email"],
+      "author_name": ["commit", "author", "name"],
+      "author_email": ["commit", "author", "email"],
+      "commit_message":  ["commit", "message"]
     }]
   },
   "post_request_callbacks": [],
