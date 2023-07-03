@@ -1,0 +1,35 @@
+{
+  "input_parameters": ["repo_name"],
+  "ignore_input_duplicates": true,
+  "uri_template": "https://api.github.com/repos/{repo_name}",
+  "api_keys": [],
+  "headers": {
+    "Accept": "application/vnd.github+json",
+    "Authorization": "Bearer <GITHUB_ACCESS_TOKEN>",
+    "X-GitHub-Api-Version": "2022-11-28"
+  },
+  "delay": [3000, 5000],
+  "pre_request_callbacks": [],
+  "pre_request_callback_filter": false,
+  "output_parameter_mapping": {
+    "created_at": ["created_at"],
+    "updated_at": ["updated_at"],
+    "is_archived": ["archived"],
+    "is_disabled": ["disabled"],
+    "is_fork": ["fork"],
+    "owner_type": ["owner", "type"],
+    "topics": ["topics"],
+    "language": ["language"],
+    "size": ["size"],
+    "forks_count": ["forks_count"],
+    "stargazers_count": ["stargazers_count"],
+    "watchers_count": ["watchers_count"],
+    "open_issues_count": ["open_issues_count"],
+    "default_branch": ["default_branch"]
+  },
+  "post_request_callbacks": [],
+  "post_request_callback_filter": false,
+  "flatten_output": true,
+  "chained_request": {},
+  "log_uri": true
+}
